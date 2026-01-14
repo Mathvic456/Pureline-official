@@ -71,7 +71,12 @@ export function ProductFilters({
               min={priceRange.min}
               max={priceRange.max}
               value={selectedPriceRange.min}
-              onChange={(e) => onPriceRangeChange(Number(e.target.value), selectedPriceRange.max)}
+              onChange={(e) => {
+                const newMin = Number(e.target.value)
+                if (newMin <= selectedPriceRange.max) {
+                  onPriceRangeChange(newMin, selectedPriceRange.max)
+                }
+              }}
               className="w-full"
             />
             <div className="text-sm text-muted-foreground">
@@ -87,7 +92,12 @@ export function ProductFilters({
               min={priceRange.min}
               max={priceRange.max}
               value={selectedPriceRange.max}
-              onChange={(e) => onPriceRangeChange(selectedPriceRange.min, Number(e.target.value))}
+              onChange={(e) => {
+                const newMax = Number(e.target.value)
+                if (newMax >= selectedPriceRange.min) {
+                  onPriceRangeChange(selectedPriceRange.min, newMax)
+                }
+              }}
               className="w-full"
             />
             <div className="text-sm text-muted-foreground">

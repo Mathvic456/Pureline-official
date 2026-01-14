@@ -61,10 +61,11 @@ export default function SearchPage() {
       setProducts((productsData as ProductWithImages[]) || [])
       setFilteredProducts((productsData as ProductWithImages[]) || [])
 
-      // Calculate price range
       if (productsData && productsData.length > 0) {
+        const currentCurrency = getCurrencyFromStorage()
+        const priceKey = currentCurrency === "USD" ? "price_usd" : currentCurrency === "GBP" ? "price_gbp" : "price_ngn"
         const prices = productsData
-          .map((p) => p.price_usd || 0)
+          .map((p) => (p[priceKey as keyof ProductWithImages] as number) || 0)
           .filter((p) => p > 0)
           .sort((a, b) => a - b)
         const minPrice = prices[0] || 0
@@ -96,14 +97,14 @@ export default function SearchPage() {
       filtered = filtered.filter((product) => selectedCategories.includes(product.category_id || ""))
     }
 
-    // Filter by price
+    const priceKey = currency === "USD" ? "price_usd" : currency === "GBP" ? "price_gbp" : "price_ngn"
     filtered = filtered.filter((product) => {
-      const price = product.price_usd || 0
+      const price = (product[priceKey as keyof ProductWithImages] as number) || 0
       return price >= selectedPriceRange.min && price <= selectedPriceRange.max
     })
 
     setFilteredProducts(filtered)
-  }, [searchQuery, products, selectedCategories, selectedPriceRange])
+  }, [searchQuery, products, selectedCategories, selectedPriceRange, currency])
 
   const handleCategoryChange = (categoryId: string, checked: boolean) => {
     setSelectedCategories((prev) => (checked ? [...prev, categoryId] : prev.filter((id) => id !== categoryId)))
