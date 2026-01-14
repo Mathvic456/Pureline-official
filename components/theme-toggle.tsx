@@ -20,10 +20,14 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      className="rounded-full"
+      className="fixed bottom-6 right-6 z-50 rounded-full border border-border bg-background/90 backdrop-blur hover:bg-secondary/80 transition-all duration-200 hover:scale-110 shadow-lg"
       title={`Switch to ${theme === "light" ? "dark" : "light"} theme`}
     >
-      {theme === "light" ? <Moon size={20} /> : <Sun size={20} />}
+      {theme === "light" ? (
+        <Moon size={20} className="transition-transform duration-300" />
+      ) : (
+        <Sun size={20} className="transition-transform duration-300" />
+      )}
     </Button>
   )
 }

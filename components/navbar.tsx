@@ -46,30 +46,30 @@ export function Navbar() {
   }
 
   return (
-    <nav className="border-b border-border sticky top-0 z-50 bg-background/80 backdrop-blur">
+    <nav className="border-b border-border sticky top-0 z-40 bg-background/80 backdrop-blur transition-all duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
-          <Link href="/" className="text-2xl font-bold text-foreground">
+          <Link href="/" className="text-2xl font-bold text-foreground hover:opacity-80 transition-opacity">
             APEX
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex gap-8 items-center">
-            <Link href="/" className="hover:text-muted-foreground transition">
+            <Link href="/" className="hover:text-muted-foreground transition-colors duration-200">
               Home
             </Link>
-            <Link href="/search" className="hover:text-muted-foreground transition">
+            <Link href="/search" className="hover:text-muted-foreground transition-colors duration-200">
               Search
             </Link>
-            <Link href="/categories" className="hover:text-muted-foreground transition">
+            <Link href="/categories" className="hover:text-muted-foreground transition-colors duration-200">
               Categories
             </Link>
 
             <select
               value={currency}
               onChange={(e) => handleCurrencyChange(e.target.value as "USD" | "GBP" | "NGN")}
-              className="px-3 py-1 border border-border rounded bg-background text-foreground cursor-pointer"
+              className="px-3 py-1 border border-border rounded bg-background text-foreground cursor-pointer transition-colors duration-200 hover:bg-secondary"
             >
               <option value="USD">USD ($)</option>
               <option value="GBP">GBP (£)</option>
@@ -78,29 +78,40 @@ export function Navbar() {
 
             {user ? (
               <>
-                <Link href="/account" className="flex items-center gap-2 hover:text-muted-foreground transition">
+                <Link
+                  href="/account"
+                  className="flex items-center gap-2 hover:text-muted-foreground transition-colors duration-200"
+                >
                   <User size={20} />
                   Account
                 </Link>
-                <Link href="/cart" className="relative hover:text-muted-foreground transition">
+                <Link
+                  href="/cart"
+                  className="relative hover:text-muted-foreground transition-colors duration-200 group"
+                >
                   <ShoppingCart size={20} />
                   {cartCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center animate-scale-fade">
                       {cartCount}
                     </span>
                   )}
                 </Link>
-                <Button variant="ghost" size="sm" onClick={handleLogout} className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="flex items-center gap-2 transition-colors duration-200"
+                >
                   <LogOut size={18} />
                   Logout
                 </Button>
               </>
             ) : (
               <>
-                <Link href="/cart" className="relative hover:text-muted-foreground transition">
+                <Link href="/cart" className="relative hover:text-muted-foreground transition-colors duration-200">
                   <ShoppingCart size={20} />
                   {cartCount > 0 && (
-                    <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center animate-scale-fade">
                       {cartCount}
                     </span>
                   )}
@@ -114,15 +125,18 @@ export function Navbar() {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-4">
-            <Link href="/cart" className="relative hover:text-muted-foreground transition">
+            <Link href="/cart" className="relative hover:text-muted-foreground transition-colors duration-200">
               <ShoppingCart size={20} />
               {cartCount > 0 && (
-                <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center animate-scale-fade">
                   {cartCount}
                 </span>
               )}
             </Link>
-            <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="transition-transform duration-200 hover:scale-110"
+            >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
@@ -130,20 +144,20 @@ export function Navbar() {
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
-          <div className="md:hidden pb-4 border-t border-border flex flex-col gap-4 pt-4">
-            <Link href="/" className="hover:text-muted-foreground transition">
+          <div className="md:hidden pb-4 border-t border-border flex flex-col gap-4 pt-4 animate-slide-in-fade">
+            <Link href="/" className="hover:text-muted-foreground transition-colors duration-200">
               Home
             </Link>
-            <Link href="/search" className="hover:text-muted-foreground transition">
+            <Link href="/search" className="hover:text-muted-foreground transition-colors duration-200">
               Search
             </Link>
-            <Link href="/categories" className="hover:text-muted-foreground transition">
+            <Link href="/categories" className="hover:text-muted-foreground transition-colors duration-200">
               Categories
             </Link>
             <select
               value={currency}
               onChange={(e) => handleCurrencyChange(e.target.value as "USD" | "GBP" | "NGN")}
-              className="px-3 py-1 border border-border rounded bg-background text-foreground cursor-pointer"
+              className="px-3 py-1 border border-border rounded bg-background text-foreground cursor-pointer transition-colors duration-200 hover:bg-secondary"
             >
               <option value="USD">USD ($)</option>
               <option value="GBP">GBP (£)</option>
@@ -151,7 +165,7 @@ export function Navbar() {
             </select>
             {user ? (
               <>
-                <Link href="/account" className="hover:text-muted-foreground transition">
+                <Link href="/account" className="hover:text-muted-foreground transition-colors duration-200">
                   Account
                 </Link>
                 <Button variant="ghost" size="sm" onClick={handleLogout} className="justify-start">

@@ -8,6 +8,7 @@ import type { Product, Category } from "@/lib/categories"
 import { useRouter, useParams } from "next/navigation"
 import { getCurrencyFromStorage, type Currency, getPriceForCurrency } from "@/lib/currency"
 import { ProductCard } from "@/components/product-card"
+import { ProductFilters } from "@/components/product-filters"
 
 interface ProductImage {
   id: string
@@ -16,15 +17,24 @@ interface ProductImage {
 }
 
 interface ProductWithImages extends Product {
+  category_id?: string
   product_images?: ProductImage[]
+}
+
+interface FilterCategory {
+  id: string
+  name: string
 }
 
 export default function CategoryPage() {
   const [category, setCategory] = useState<Category | null>(null)
   const [products, setProducts] = useState<ProductWithImages[]>([])
+  const [filteredProducts, setFilteredProducts] = useState<ProductWithImages[]>([])
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [currency, setCurrency] = useState<Currency>("USD")
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 })
+  const [selectedPriceRange, setSelectedPriceRange] = useState({ min: 0, max: 1000 })
   const supabase = createClient()
   const router = useRouter()
   const params = useParams()
@@ -46,6 +56,18 @@ export default function CategoryPage() {
 
       setCategory(categoryData)
       setProducts((productsData as ProductWithImages[]) || [])
+      setFilteredProducts((productsData as ProductWithImages[]) || [])
+
+      if (productsData && productsData.length > 0) {
+        const prices = productsData
+          .map((p) => p.price_usd || 0)
+          .filter((p) => p > 0)
+          .sort((a, b) => a - b)
+        const minPrice = prices[0] || 0
+        const maxPrice = prices[prices.length - 1] || 1000
+        setPriceRange({ min: minPrice, max: maxPrice })
+        setSelectedPriceRange({ min: minPrice, max: maxPrice })
+      }
       setLoading(false)
     }
 
@@ -57,6 +79,18 @@ export default function CategoryPage() {
     window.addEventListener("storage", handleStorageChange)
     return () => window.removeEventListener("storage", handleStorageChange)
   }, [supabase, categoryId])
+
+  useEffect(() => {
+    const filtered = products.filter((product) => {
+      const price = product.price_usd || 0
+      return price >= selectedPriceRange.min && price <= selectedPriceRange.max
+    })
+    setFilteredProducts(filtered)
+  }, [products, selectedPriceRange])
+
+  const handlePriceRangeChange = (min: number, max: number) => {
+    setSelectedPriceRange({ min, max })
+  }
 
   const handleAddToCart = async (productId: string) => {
     if (!user) {
@@ -140,20 +174,37 @@ export default function CategoryPage() {
             </CardHeader>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {products.map((product) => {
-              const price = getPriceForCurrency(product, currency)
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div className="lg:col-span-1">
+              <ProductFilters
+                categories={[]}
+                priceRange={priceRange}
+                selectedCategories={[]}
+                selectedPriceRange={selectedPriceRange}
+                currency={currency}
+                onCategoryChange={() => {}}
+                onPriceRangeChange={handlePriceRangeChange}
+              />
+            </div>
 
-              return (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  currency={currency}
-                  price={price}
-                  onAddToCart={handleAddToCart}
-                />
-              )
-            })}
+            {/* Products grid */}
+            <div className="lg:col-span-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredProducts.map((product) => {
+                  const price = getPriceForCurrency(product, currency)
+
+                  return (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      currency={currency}
+                      price={price}
+                      onAddToCart={handleAddToCart}
+                    />
+                  )
+                })}
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation"
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { getCurrencyFromStorage, type Currency, getPriceForCurrency } from "@/lib/currency"
 import { ProductCard } from "@/components/product-card"
+import { ProductFilters } from "@/components/product-filters"
 
 interface ProductImage {
   id: string
@@ -17,19 +18,29 @@ interface ProductImage {
 }
 
 interface ProductWithImages extends Product {
+  category_id?: string
   price_usd?: number
   price_gbp?: number
   price_ngn?: number
   product_images?: ProductImage[]
 }
 
+interface Category {
+  id: string
+  name: string
+}
+
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [products, setProducts] = useState<ProductWithImages[]>([])
   const [filteredProducts, setFilteredProducts] = useState<ProductWithImages[]>([])
+  const [categories, setCategories] = useState<Category[]>([])
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [currency, setCurrency] = useState<Currency>("USD")
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+  const [priceRange, setPriceRange] = useState({ min: 0, max: 1000 })
+  const [selectedPriceRange, setSelectedPriceRange] = useState({ min: 0, max: 1000 })
   const supabase = createClient()
   const router = useRouter()
 
@@ -39,6 +50,9 @@ export default function SearchPage() {
       setUser(data?.user || null)
       setCurrency(getCurrencyFromStorage())
 
+      const { data: categoriesData } = await supabase.from("categories").select("id, name").order("name")
+      setCategories((categoriesData || []) as Category[])
+
       const { data: productsData } = await supabase
         .from("products")
         .select("*, product_images(*)")
@@ -46,6 +60,18 @@ export default function SearchPage() {
 
       setProducts((productsData as ProductWithImages[]) || [])
       setFilteredProducts((productsData as ProductWithImages[]) || [])
+
+      // Calculate price range
+      if (productsData && productsData.length > 0) {
+        const prices = productsData
+          .map((p) => p.price_usd || 0)
+          .filter((p) => p > 0)
+          .sort((a, b) => a - b)
+        const minPrice = prices[0] || 0
+        const maxPrice = prices[prices.length - 1] || 1000
+        setPriceRange({ min: minPrice, max: maxPrice })
+        setSelectedPriceRange({ min: minPrice, max: maxPrice })
+      }
       setLoading(false)
     }
 
@@ -59,13 +85,33 @@ export default function SearchPage() {
   }, [supabase])
 
   useEffect(() => {
-    const filtered = products.filter(
+    let filtered = products.filter(
       (product) =>
         product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.description?.toLowerCase().includes(searchQuery.toLowerCase()),
     )
+
+    // Filter by category
+    if (selectedCategories.length > 0) {
+      filtered = filtered.filter((product) => selectedCategories.includes(product.category_id || ""))
+    }
+
+    // Filter by price
+    filtered = filtered.filter((product) => {
+      const price = product.price_usd || 0
+      return price >= selectedPriceRange.min && price <= selectedPriceRange.max
+    })
+
     setFilteredProducts(filtered)
-  }, [searchQuery, products])
+  }, [searchQuery, products, selectedCategories, selectedPriceRange])
+
+  const handleCategoryChange = (categoryId: string, checked: boolean) => {
+    setSelectedCategories((prev) => (checked ? [...prev, categoryId] : prev.filter((id) => id !== categoryId)))
+  }
+
+  const handlePriceRangeChange = (min: number, max: number) => {
+    setSelectedPriceRange({ min, max })
+  }
 
   const handleAddToCart = async (productId: string) => {
     if (!user) {
@@ -114,30 +160,49 @@ export default function SearchPage() {
 
         {loading ? (
           <div className="text-center py-12">Loading products...</div>
-        ) : filteredProducts.length === 0 ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>No products found</CardTitle>
-              <CardDescription>
-                {searchQuery ? "Try adjusting your search terms" : "No products available yet"}
-              </CardDescription>
-            </CardHeader>
-          </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {filteredProducts.map((product) => {
-              const price = getPriceForCurrency(product, currency)
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            <div className="lg:col-span-1">
+              <ProductFilters
+                categories={categories}
+                priceRange={priceRange}
+                selectedCategories={selectedCategories}
+                selectedPriceRange={selectedPriceRange}
+                currency={currency}
+                onCategoryChange={handleCategoryChange}
+                onPriceRangeChange={handlePriceRangeChange}
+              />
+            </div>
 
-              return (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  currency={currency}
-                  price={price}
-                  onAddToCart={handleAddToCart}
-                />
-              )
-            })}
+            {/* Products grid */}
+            <div className="lg:col-span-3">
+              {filteredProducts.length === 0 ? (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>No products found</CardTitle>
+                    <CardDescription>
+                      {searchQuery ? "Try adjusting your search terms or filters" : "No products available yet"}
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredProducts.map((product) => {
+                    const price = getPriceForCurrency(product, currency)
+
+                    return (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        currency={currency}
+                        price={price}
+                        onAddToCart={handleAddToCart}
+                      />
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
