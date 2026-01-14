@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { promoteUserToAdmin } from "@/app/actions/promote-admin-on-confirm"
 
 export function ConfirmContent() {
   const searchParams = useSearchParams()
@@ -27,16 +28,12 @@ export function ConfirmContent() {
           console.log("[v0] User already has confirmed email, showing success")
 
           if (isAdminSignup && session.user.id) {
-            try {
-              const { error: adminError } = await supabase.from("admin_users").insert([{ id: session.user.id }])
-              if (adminError && adminError.code !== "23505") {
-                console.log("[v0] Admin promotion error:", adminError)
-              } else {
-                console.log("[v0] User promoted to admin")
-                setRedirectUrl("/admin/login")
-              }
-            } catch (err) {
-              console.log("[v0] Error promoting admin:", err)
+            const result = await promoteUserToAdmin(session.user.id)
+            if (result.success) {
+              console.log("[v0] User promoted to admin")
+              setRedirectUrl("/admin/login")
+            } else {
+              console.log("[v0] Admin promotion failed:", result.error)
             }
           }
 
@@ -75,16 +72,12 @@ export function ConfirmContent() {
             console.log("[v0] User now has confirmed email after OTP attempt, showing success")
 
             if (isAdminSignup && newSession.user.id) {
-              try {
-                const { error: adminError } = await supabase.from("admin_users").insert([{ id: newSession.user.id }])
-                if (adminError && adminError.code !== "23505") {
-                  console.log("[v0] Admin promotion error:", adminError)
-                } else {
-                  console.log("[v0] User promoted to admin")
-                  setRedirectUrl("/admin/login")
-                }
-              } catch (err) {
-                console.log("[v0] Error promoting admin:", err)
+              const result = await promoteUserToAdmin(newSession.user.id)
+              if (result.success) {
+                console.log("[v0] User promoted to admin")
+                setRedirectUrl("/admin/login")
+              } else {
+                console.log("[v0] Admin promotion failed:", result.error)
               }
             }
 
@@ -104,16 +97,12 @@ export function ConfirmContent() {
         if (isAdminSignup) {
           const { data: userData } = await supabase.auth.getUser()
           if (userData.user?.id) {
-            try {
-              const { error: adminError } = await supabase.from("admin_users").insert([{ id: userData.user.id }])
-              if (adminError && adminError.code !== "23505") {
-                console.log("[v0] Admin promotion error:", adminError)
-              } else {
-                console.log("[v0] User promoted to admin")
-                setRedirectUrl("/admin/login")
-              }
-            } catch (err) {
-              console.log("[v0] Error promoting admin:", err)
+            const result = await promoteUserToAdmin(userData.user.id)
+            if (result.success) {
+              console.log("[v0] User promoted to admin")
+              setRedirectUrl("/admin/login")
+            } else {
+              console.log("[v0] Admin promotion failed:", result.error)
             }
           }
         }
