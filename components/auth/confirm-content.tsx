@@ -24,16 +24,21 @@ export function ConfirmContent() {
           data: { session },
         } = await supabase.auth.getSession()
 
+        console.log("[v0] Initial session check - email_confirmed_at:", session?.user?.email_confirmed_at)
+
         if (session?.user?.email_confirmed_at) {
-          console.log("[v0] User already has confirmed email, showing success")
+          console.log("[v0] User already has confirmed email, user id:", session.user.id)
 
           if (isAdminSignup && session.user.id) {
+            console.log("[v0] Calling promoteUserToAdmin for admin signup")
             const result = await promoteUserToAdmin(session.user.id)
+            console.log("[v0] Promote result:", result)
             if (result.success) {
               console.log("[v0] User promoted to admin")
               setRedirectUrl("/admin/login")
             } else {
               console.log("[v0] Admin promotion failed:", result.error)
+              setErrorMessage("Failed to promote to admin: " + result.error)
             }
           }
 
@@ -46,6 +51,8 @@ export function ConfirmContent() {
         const type = searchParams.get("type")
         const email = searchParams.get("email")
 
+        console.log("[v0] Token verification - token_hash:", !!token_hash, "type:", type, "email:", email)
+
         if (!token_hash || type !== "email") {
           console.log("[v0] Missing token_hash or invalid type")
           setStatus("error")
@@ -53,7 +60,7 @@ export function ConfirmContent() {
           return
         }
 
-        console.log("[v0] Attempting to verify OTP with email:", email)
+        console.log("[v0] Attempting to verify OTP")
 
         const { error } = await supabase.auth.verifyOtp({
           type: "email",
@@ -61,23 +68,30 @@ export function ConfirmContent() {
           email: email || "",
         })
 
+        console.log("[v0] OTP verification result - error:", error?.message)
+
         if (error) {
-          console.log("[v0] OTP verification failed:", error.message)
+          console.log("[v0] OTP verification failed, checking session again")
 
           const {
             data: { session: newSession },
           } = await supabase.auth.getSession()
 
+          console.log("[v0] New session check - confirmed:", newSession?.user?.email_confirmed_at)
+
           if (newSession?.user?.email_confirmed_at) {
-            console.log("[v0] User now has confirmed email after OTP attempt, showing success")
+            console.log("[v0] User now confirmed, promoting to admin if applicable")
 
             if (isAdminSignup && newSession.user.id) {
+              console.log("[v0] Calling promoteUserToAdmin after OTP error")
               const result = await promoteUserToAdmin(newSession.user.id)
+              console.log("[v0] Promote result after OTP:", result)
               if (result.success) {
                 console.log("[v0] User promoted to admin")
                 setRedirectUrl("/admin/login")
               } else {
                 console.log("[v0] Admin promotion failed:", result.error)
+                setErrorMessage("Failed to promote to admin: " + result.error)
               }
             }
 
@@ -86,7 +100,7 @@ export function ConfirmContent() {
             return
           }
 
-          console.log("[v0] User still not confirmed, showing error")
+          console.log("[v0] User still not confirmed")
           setStatus("error")
           setErrorMessage(error.message || "Failed to confirm email")
           return
@@ -96,13 +110,16 @@ export function ConfirmContent() {
 
         if (isAdminSignup) {
           const { data: userData } = await supabase.auth.getUser()
+          console.log("[v0] Got user after successful OTP:", userData.user?.id)
           if (userData.user?.id) {
             const result = await promoteUserToAdmin(userData.user.id)
+            console.log("[v0] Promote result after successful OTP:", result)
             if (result.success) {
               console.log("[v0] User promoted to admin")
               setRedirectUrl("/admin/login")
             } else {
               console.log("[v0] Admin promotion failed:", result.error)
+              setErrorMessage("Failed to promote to admin: " + result.error)
             }
           }
         }
