@@ -69,15 +69,21 @@ export default function SignUpPage() {
     setIsLoading(true)
 
     try {
-      console.log("[v0] Saving user profile for:", email)
-      await saveUserProfile(firstName, lastName, phoneNumber, streetAddress, city, country, postalCode)
-      console.log("[v0] Profile saved successfully")
+      console.log("[v0] About to save user profile")
+      const result = await saveUserProfile(firstName, lastName, phoneNumber, streetAddress, city, country, postalCode)
+      console.log("[v0] Profile save result:", result)
+
+      if (!result.success) {
+        setError(result.message || "Could not save profile at this time")
+        setIsLoading(false)
+        return
+      }
+
       setShowSuccess(true)
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : "An error occurred"
       console.log("[v0] Profile save error:", errorMessage)
       setError(errorMessage)
-    } finally {
       setIsLoading(false)
     }
   }

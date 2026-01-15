@@ -15,16 +15,16 @@ export async function saveUserProfile(
   const supabase = await createClient(cookies())
   const { data: user, error: authError } = await supabase.auth.getUser()
 
-  // User can complete profile after email confirmation
   if (authError || !user.user) {
-    console.log("[v0] User not authenticated yet - profile will be completed after email confirmation")
+    console.log("[v0] User not authenticated yet")
     return {
-      success: true,
-      message: "Email confirmation required. You can complete your profile after confirming your email.",
+      success: false,
+      message: "User not authenticated",
     }
   }
 
   try {
+    console.log("[v0] Saving profile for user:", user.user.id)
     const { error: profileError } = await supabase.from("user_profiles").upsert(
       {
         id: user.user.id,
@@ -41,8 +41,8 @@ export async function saveUserProfile(
       throw profileError
     }
 
-    // If address details provided, create default address during signup
     if (streetAddress && city && country) {
+      console.log("[v0] Saving address for user:", user.user.id)
       const { error: addressError } = await supabase.from("user_addresses").insert([
         {
           user_id: user.user.id,
