@@ -7,7 +7,7 @@ export async function promoteUserToAdmin(userId: string) {
 
     if (!userId) {
       console.log("[v0] ERROR: No userId provided")
-      return { error: "No user ID provided" }
+      return { success: false, error: "No user ID provided" }
     }
 
     const adminClient = getAdminClient()
@@ -17,18 +17,14 @@ export async function promoteUserToAdmin(userId: string) {
 
     const { data, error } = await adminClient
       .from("admin_users")
-      .insert([{ id: userId }])
+      .upsert([{ id: userId }], { onConflict: "id" })
       .select()
 
-    console.log("[v0] Insert response - data:", data, "error:", error)
+    console.log("[v0] Upsert response - data:", data, "error:", error)
 
     if (error) {
-      if (error.code === "23505") {
-        console.log("[v0] User already admin (duplicate key)")
-        return { success: true, message: "User already admin" }
-      }
       console.log("[v0] Error promoting to admin - code:", error.code, "message:", error.message)
-      return { error: error.message }
+      return { success: false, error: error.message }
     }
 
     console.log("[v0] PROMOTE SUCCESS - data:", data)
@@ -36,6 +32,7 @@ export async function promoteUserToAdmin(userId: string) {
   } catch (error) {
     console.error("[v0] PROMOTE EXCEPTION:", error)
     return {
+      success: false,
       error: error instanceof Error ? error.message : "An error occurred",
     }
   }
