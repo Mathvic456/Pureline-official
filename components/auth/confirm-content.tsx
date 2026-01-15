@@ -13,13 +13,14 @@ export function ConfirmContent() {
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading")
   const [errorMessage, setErrorMessage] = useState("")
   const [countdown, setCountdown] = useState(2)
+  const [redirectUrl, setRedirectUrl] = useState("/auth/login")
   const isAdminSignup = searchParams.get("admin") === "true"
   const supabase = createClient()
 
   useEffect(() => {
     const verifyEmail = async () => {
       try {
-        let finalRedirectUrl = "/auth/login"
+        const finalRedirectUrl = isAdminSignup ? "/admin/login" : "/auth/login"
 
         const {
           data: { session },
@@ -36,7 +37,6 @@ export function ConfirmContent() {
             console.log("[v0] Promote result:", result)
             if (result.success) {
               console.log("[v0] User promoted to admin")
-              finalRedirectUrl = "/admin/login"
             } else {
               console.log("[v0] Admin promotion failed:", result.error)
               setErrorMessage("Failed to promote to admin: " + result.error)
@@ -44,6 +44,7 @@ export function ConfirmContent() {
           }
 
           setStatus("success")
+          setRedirectUrl(finalRedirectUrl)
           startRedirectCountdown(finalRedirectUrl)
           return
         }
@@ -89,7 +90,6 @@ export function ConfirmContent() {
               console.log("[v0] Promote result after OTP:", result)
               if (result.success) {
                 console.log("[v0] User promoted to admin")
-                finalRedirectUrl = "/admin/login"
               } else {
                 console.log("[v0] Admin promotion failed:", result.error)
                 setErrorMessage("Failed to promote to admin: " + result.error)
@@ -97,6 +97,7 @@ export function ConfirmContent() {
             }
 
             setStatus("success")
+            setRedirectUrl(finalRedirectUrl)
             startRedirectCountdown(finalRedirectUrl)
             return
           }
@@ -117,7 +118,6 @@ export function ConfirmContent() {
             console.log("[v0] Promote result after successful OTP:", result)
             if (result.success) {
               console.log("[v0] User promoted to admin")
-              finalRedirectUrl = "/admin/login"
             } else {
               console.log("[v0] Admin promotion failed:", result.error)
               setErrorMessage("Failed to promote to admin: " + result.error)
@@ -126,6 +126,7 @@ export function ConfirmContent() {
         }
 
         setStatus("success")
+        setRedirectUrl(finalRedirectUrl)
         startRedirectCountdown(finalRedirectUrl)
       } catch (error) {
         console.log("[v0] Unexpected error during verification:", error)
@@ -221,7 +222,9 @@ export function ConfirmContent() {
               {countdown} seconds...
             </p>
             <Button asChild className="w-full">
-              <Link href="/auth/login">{isAdminSignup ? "Go to Admin Login" : "Go to Login"}</Link>
+              <Link href={isAdminSignup ? "/admin/login" : "/auth/login"}>
+                {isAdminSignup ? "Go to Admin Login" : "Go to Login"}
+              </Link>
             </Button>
           </CardContent>
         </Card>
