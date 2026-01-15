@@ -25,37 +25,56 @@ export default function AdminLoginPage() {
     setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log("[v0] Admin login attempt for:", email)
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
 
-      if (error) throw error
+      if (signInError) throw signInError
 
-      await new Promise((resolve) => setTimeout(resolve, 500))
+      console.log("[v0] Sign in successful, verifying admin status...")
 
-      // Verify admin status
-      const { data } = await supabase.auth.getUser()
-      if (data?.user) {
-        const { data: adminUser, error: queryError } = await supabase
-          .from("admin_users")
-          .select("id")
-          .eq("id", data.user.id)
-          .maybeSingle()
+      await new Promise((resolve) => setTimeout(resolve, 1000))
 
-        if (queryError) {
-          console.log("[v0] Admin query error:", queryError)
-          throw new Error("Failed to verify admin status")
-        }
+      const { data: userData, error: userError } = await supabase.auth.getUser()
+      console.log("[v0] User data retrieved:", userData?.user?.id, "error:", userError)
 
-        if (!adminUser) {
-          throw new Error("This account does not have admin privileges")
-        }
-
-        router.push("/admin/dashboard")
+      if (userError || !userData?.user) {
+        throw new Error("Failed to get user information")
       }
+
+      const userId = userData.user.id
+      console.log("[v0] Checking admin status for user:", userId)
+
+      const { data: adminUser, error: queryError } = await supabase
+        .from("admin_users")
+        .select("id")
+        .eq("id", userId)
+        .single()
+
+      console.log("[v0] Admin query result - data:", adminUser, "error:", queryError?.message)
+
+      if (queryError) {
+        console.log("[v0] Admin query error code:", queryError.code)
+        // Only throw if it's not PGRST116 (no rows returned)
+        if (queryError.code !== "PGRST116") {
+          throw new Error(`Admin verification failed: ${queryError.message}`)
+        }
+        throw new Error("This account does not have admin privileges")
+      }
+
+      if (!adminUser) {
+        throw new Error("This account does not have admin privileges")
+      }
+
+      console.log("[v0] Admin verification passed, redirecting to dashboard")
+      router.push("/admin/dashboard")
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Login failed")
+      const errorMessage = error instanceof Error ? error.message : "Login failed"
+      console.log("[v0] Login error:", errorMessage)
+      setError(errorMessage)
     } finally {
       setIsLoading(false)
     }
