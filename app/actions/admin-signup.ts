@@ -15,11 +15,9 @@ export async function signupAsAdmin(email: string, password: string) {
 
     const supabase = await createClient(cookies())
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || `https://${process.env.VERCEL_URL}` || "http://localhost:3000"
-
-    console.log("[v0] Admin signup - Site URL:", siteUrl)
-    console.log("[v0] Admin signup - NEXT_PUBLIC_SITE_URL:", process.env.NEXT_PUBLIC_SITE_URL)
-    console.log("[v0] Admin signup - VERCEL_URL:", process.env.VERCEL_URL)
+    // Prioritize NEXT_PUBLIC_SITE_URL, then VERCEL_URL, then localhost
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000")
 
     const { data, error } = await supabase.auth.signUp({
       email,

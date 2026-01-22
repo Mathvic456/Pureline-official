@@ -30,7 +30,7 @@ export function ProductFilters({
   const currencySymbols: Record<Currency, string> = {
     USD: "$",
     GBP: "£",
-    NGN: "₦",
+    EUR: "€",
   }
 
   return (

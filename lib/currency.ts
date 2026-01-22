@@ -1,22 +1,23 @@
-export type Currency = "USD" | "GBP" | "NGN"
+export type Currency = "USD" | "GBP" | "EUR"
 
 export const currencySymbols: Record<Currency, string> = {
   USD: "$",
   GBP: "£",
-  NGN: "₦",
+  EUR: "€",
 }
 
 export function formatPrice(amount: number, currency: Currency): string {
   const symbol = currencySymbols[currency]
-  if (currency === "NGN") {
-    return `${symbol}${(amount / 100).toLocaleString()}`
-  }
   return `${symbol}${(amount / 100).toFixed(2)}`
 }
 
 export function getCurrencyFromStorage(): Currency {
   if (typeof window === "undefined") return "USD"
   const stored = localStorage.getItem("currency")
+  if (stored === "NGN") {
+    localStorage.setItem("currency", "USD")
+    return "USD"
+  }
   return (stored as Currency) || "USD"
 }
 

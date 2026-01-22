@@ -3,14 +3,14 @@
 import type React from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { OAuthButtons } from "@/components/auth/oauth-buttons"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { saveUserProfile } from "@/app/actions/user-profile"
+import { validateSignupForm, validateProfileForm } from "@/lib/validation"
+import { countries, type CountryData, validatePhoneForCountry, formatPhoneWithCountryCode } from "@/lib/countries"
 
 export default function SignUpPage() {
   const [step, setStep] = useState(1)
@@ -22,42 +22,78 @@ export default function SignUpPage() {
   const [phoneNumber, setPhoneNumber] = useState("")
   const [streetAddress, setStreetAddress] = useState("")
   const [city, setCity] = useState("")
-  const [country, setCountry] = useState("")
+  const [selectedCountry, setSelectedCountry] = useState<CountryData | null>(null)
   const [postalCode, setPostalCode] = useState("")
-  const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
-  const router = useRouter()
   const supabase = createClient()
+
+  // Handle country change - update postal code placeholder and reset phone
+  const handleCountryChange = (countryCode: string) => {
+    const country = countries.find(c => c.code === countryCode)
+    setSelectedCountry(country || null)
+    setPhoneNumber("")
+    setPostalCode("")
+    
+    // Clear phone error when country changes
+    if (fieldErrors.phone) {
+      setFieldErrors(prev => {
+        const { phone, ...rest } = prev
+        return rest
+      })
+    }
+  }
+
+  // Format phone number as user types (only digits)
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    // Only allow digits
+    const digitsOnly = value.replace(/\D/g, "")
+    
+    // Limit based on country max length
+    if (selectedCountry) {
+      const maxLength = Array.isArray(selectedCountry.phoneLength) 
+        ? selectedCountry.phoneLength[1] 
+        : selectedCountry.phoneLength
+      setPhoneNumber(digitsOnly.slice(0, maxLength))
+    } else {
+      setPhoneNumber(digitsOnly.slice(0, 15))
+    }
+  }
 
   const handleStep1 = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
+    setFieldErrors({})
 
-    if (password !== repeatPassword) {
-      setError("Passwords do not match")
-      return
-    }
+    const validation = validateSignupForm({
+      email,
+      password,
+      confirmPassword: repeatPassword,
+    })
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters")
+    if (!validation.isValid) {
+      setFieldErrors(validation.errors)
       return
     }
 
     setIsLoading(true)
 
     try {
+      // Use production site URL, fallback to window.location.origin for local dev
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+      
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/confirm`,
+          emailRedirectTo: `${siteUrl}/auth/confirm`,
         },
       })
       if (error) throw error
       setStep(2)
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+      setFieldErrors({ form: error instanceof Error ? error.message : "An error occurred" })
     } finally {
       setIsLoading(false)
     }
@@ -65,208 +101,330 @@ export default function SignUpPage() {
 
   const handleStep2 = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
+    setFieldErrors({})
+
+    // Validate country selection
+    if (!selectedCountry) {
+      setFieldErrors({ country: "Please select a country" })
+      return
+    }
+
+    // Validate phone for selected country
+    const phoneError = validatePhoneForCountry(phoneNumber, selectedCountry.code)
+    if (phoneError) {
+      setFieldErrors({ phone: phoneError })
+      return
+    }
+
+    const validation = validateProfileForm({
+      firstName,
+      lastName,
+      phone: phoneNumber,
+      address: streetAddress,
+      city,
+      country: selectedCountry.name,
+    })
+
+    if (!validation.isValid) {
+      setFieldErrors(validation.errors)
+      return
+    }
+
     setIsLoading(true)
 
     try {
-      console.log("[v0] About to save user profile")
-      const result = await saveUserProfile(firstName, lastName, phoneNumber, streetAddress, city, country, postalCode)
-      console.log("[v0] Profile save result:", result)
-
-      if (!result.success) {
-        setError(result.message || "Could not save profile at this time")
-        setIsLoading(false)
-        return
+      // Format phone with country code
+      const fullPhoneNumber = formatPhoneWithCountryCode(phoneNumber, selectedCountry.dialCode)
+      
+      // Store profile data in localStorage to be saved after email confirmation
+      // The user is NOT authenticated until they confirm their email
+      const pendingProfile = {
+        firstName,
+        lastName,
+        phoneNumber: fullPhoneNumber,
+        streetAddress,
+        city,
+        country: selectedCountry.name,
+        postalCode,
+        email, // Store email to match the profile to the user
       }
+      localStorage.setItem("pendingUserProfile", JSON.stringify(pendingProfile))
 
       setShowSuccess(true)
     } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : "An error occurred"
-      console.log("[v0] Profile save error:", errorMessage)
-      setError(errorMessage)
+      setFieldErrors({ form: error instanceof Error ? error.message : "An error occurred" })
+    } finally {
       setIsLoading(false)
     }
   }
 
   if (showSuccess) {
     return (
-      <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-        <div className="w-full max-w-sm">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">Check your email</CardTitle>
-              <CardDescription>
-                We sent a confirmation link to {email}. Click it to activate your account.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-6">
-                You can close this tab and check your email (and your spam too please) to confirm your account.
-              </p>
-              <Button asChild className="w-full">
-                <Link href="/">Back to Home</Link>
-              </Button>
-            </CardContent>
-          </Card>
+      <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10 bg-background">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-light tracking-tight mb-2">Check your email</h1>
+            <p className="text-muted-foreground">
+              We sent a confirmation link to <span className="font-medium text-foreground">{email}</span>
+            </p>
+          </div>
+          <div className="border-t pt-6">
+            <p className="text-sm text-muted-foreground text-center mb-6">
+              Click the link in your email to activate your account. Don't forget to check your spam folder.
+            </p>
+            <Button asChild variant="outline" className="w-full bg-transparent">
+              <Link href="/">Back to Home</Link>
+            </Button>
+          </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
-      <div className="w-full max-w-sm">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">{step === 1 ? "Sign up" : "Complete your profile"}</CardTitle>
-            <CardDescription>
-              {step === 1
-                ? "Create a new account to start shopping"
-                : "Tell us more about yourself (you can edit this later)"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {step === 1 && <OAuthButtons />}
+    <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10 bg-background">
+      <div className="w-full max-w-md">
+        <div className="text-center mb-8">
+          <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            APEX
+          </Link>
+          <h1 className="text-3xl font-light tracking-tight mt-6 mb-2">
+            {step === 1 ? "Create account" : "Complete profile"}
+          </h1>
+          <p className="text-muted-foreground text-sm">
+            {step === 1 ? "Join us to start shopping" : "Tell us about yourself"}
+          </p>
+        </div>
 
-            <form onSubmit={step === 1 ? handleStep1 : handleStep2} className="flex flex-col gap-6">
-              {step === 1 ? (
-                <>
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="m@example.com"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="repeat-password">Repeat Password</Label>
-                    <Input
-                      id="repeat-password"
-                      type="password"
-                      required
-                      value={repeatPassword}
-                      onChange={(e) => setRepeatPassword(e.target.value)}
-                    />
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        type="text"
-                        placeholder="John"
-                        required
-                        value={firstName}
-                        onChange={(e) => setFirstName(e.target.value)}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        type="text"
-                        placeholder="Doe"
-                        required
-                        value={lastName}
-                        onChange={(e) => setLastName(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="phoneNumber">Phone Number</Label>
-                    <Input
-                      id="phoneNumber"
-                      type="tel"
-                      placeholder="+1 (555) 000-0000"
-                      required
-                      value={phoneNumber}
-                      onChange={(e) => setPhoneNumber(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="streetAddress">Street Address</Label>
-                    <Input
-                      id="streetAddress"
-                      type="text"
-                      placeholder="123 Main St"
-                      required
-                      value={streetAddress}
-                      onChange={(e) => setStreetAddress(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="city">City</Label>
-                      <Input
-                        id="city"
-                        type="text"
-                        placeholder="Anytown"
-                        required
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="country">Country</Label>
-                      <Input
-                        id="country"
-                        type="text"
-                        placeholder="USA"
-                        required
-                        value={country}
-                        onChange={(e) => setCountry(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="postalCode">Postal Code</Label>
-                    <Input
-                      id="postalCode"
-                      type="text"
-                      placeholder="12345"
-                      value={postalCode}
-                      onChange={(e) => setPostalCode(e.target.value)}
-                    />
-                  </div>
-                </>
-              )}
-              {error && <p className="text-sm text-destructive">{error}</p>}
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Processing..." : step === 1 ? "Continue" : "Complete Sign Up"}
-              </Button>
-              {step === 2 && (
-                <Button type="button" variant="outline" onClick={() => setStep(1)} disabled={isLoading}>
-                  Back
-                </Button>
-              )}
-              {step === 1 && (
-                <div className="text-center text-sm">
-                  Already have an account?{" "}
-                  <Link href="/auth/login" className="underline underline-offset-4 hover:text-primary">
-                    Login
-                  </Link>
+        {step === 1 && (
+          <div className="mb-8">
+            <OAuthButtons />
+          </div>
+        )}
+
+        <form onSubmit={step === 1 ? handleStep1 : handleStep2} className="space-y-5">
+          {step === 1 ? (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="your@email.com"
+                  required
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className={`h-12 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors ${fieldErrors.email ? "border-destructive" : ""}`}
+                />
+                {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={`h-12 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors ${fieldErrors.password ? "border-destructive" : ""}`}
+                />
+                {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="repeat-password" className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Confirm Password
+                </Label>
+                <Input
+                  id="repeat-password"
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  value={repeatPassword}
+                  onChange={(e) => setRepeatPassword(e.target.value)}
+                  className={`h-12 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors ${fieldErrors.confirmPassword ? "border-destructive" : ""}`}
+                />
+                {fieldErrors.confirmPassword && <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>}
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="firstName" className="text-xs uppercase tracking-wider text-muted-foreground">
+                    First Name
+                  </Label>
+                  <Input
+                    id="firstName"
+                    type="text"
+                    required
+                    autoComplete="given-name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    className={`h-12 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors ${fieldErrors.firstName ? "border-destructive" : ""}`}
+                  />
+                  {fieldErrors.firstName && <p className="text-xs text-destructive">{fieldErrors.firstName}</p>}
                 </div>
-              )}
-            </form>
-          </CardContent>
-        </Card>
+                <div className="space-y-2">
+                  <Label htmlFor="lastName" className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Last Name
+                  </Label>
+                  <Input
+                    id="lastName"
+                    type="text"
+                    required
+                    autoComplete="family-name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className={`h-12 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors ${fieldErrors.lastName ? "border-destructive" : ""}`}
+                  />
+                  {fieldErrors.lastName && <p className="text-xs text-destructive">{fieldErrors.lastName}</p>}
+                </div>
+              </div>
+
+              {/* Country Selector */}
+              <div className="space-y-2">
+                <Label htmlFor="country" className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Country
+                </Label>
+                <select
+                  id="country"
+                  value={selectedCountry?.code || ""}
+                  onChange={(e) => handleCountryChange(e.target.value)}
+                  required
+                  autoComplete="country"
+                  className={`w-full h-12 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus:border-foreground transition-colors text-foreground ${fieldErrors.country ? "border-destructive" : "border-border"}`}
+                >
+                  <option value="" className="bg-background text-muted-foreground">Select a country</option>
+                  {countries.map((country) => (
+                    <option key={country.code} value={country.code} className="bg-background text-foreground">
+                      {country.name}
+                    </option>
+                  ))}
+                </select>
+                {fieldErrors.country && <p className="text-xs text-destructive">{fieldErrors.country}</p>}
+              </div>
+
+              {/* Phone Number with Country Code */}
+              <div className="space-y-2">
+                <Label htmlFor="phoneNumber" className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Phone Number
+                </Label>
+                <div className="flex items-center gap-2">
+                  {selectedCountry && (
+                    <div className="flex items-center h-12 px-3 border-0 border-b border-border bg-transparent text-muted-foreground whitespace-nowrap">
+                      {selectedCountry.dialCode}
+                    </div>
+                  )}
+                  <Input
+                    id="phoneNumber"
+                    type="tel"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    placeholder={selectedCountry ? `${Array.isArray(selectedCountry.phoneLength) ? selectedCountry.phoneLength[0] : selectedCountry.phoneLength} digits` : "Select country first"}
+                    required
+                    disabled={!selectedCountry}
+                    autoComplete="tel-national"
+                    value={phoneNumber}
+                    onChange={handlePhoneChange}
+                    className={`h-12 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors flex-1 ${fieldErrors.phone ? "border-destructive" : ""}`}
+                  />
+                </div>
+                {selectedCountry && (
+                  <p className="text-xs text-muted-foreground">
+                    {Array.isArray(selectedCountry.phoneLength) 
+                      ? `${selectedCountry.phoneLength[0]}-${selectedCountry.phoneLength[1]} digits required`
+                      : `${selectedCountry.phoneLength} digits required`}
+                    {phoneNumber && ` (${phoneNumber.length} entered)`}
+                  </p>
+                )}
+                {fieldErrors.phone && <p className="text-xs text-destructive">{fieldErrors.phone}</p>}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="streetAddress" className="text-xs uppercase tracking-wider text-muted-foreground">
+                  Street Address
+                </Label>
+                <Input
+                  id="streetAddress"
+                  type="text"
+                  required
+                  autoComplete="street-address"
+                  value={streetAddress}
+                  onChange={(e) => setStreetAddress(e.target.value)}
+                  className={`h-12 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors ${fieldErrors.address ? "border-destructive" : ""}`}
+                />
+                {fieldErrors.address && <p className="text-xs text-destructive">{fieldErrors.address}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="city" className="text-xs uppercase tracking-wider text-muted-foreground">
+                    City
+                  </Label>
+                  <Input
+                    id="city"
+                    type="text"
+                    required
+                    autoComplete="address-level2"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className={`h-12 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors ${fieldErrors.city ? "border-destructive" : ""}`}
+                  />
+                  {fieldErrors.city && <p className="text-xs text-destructive">{fieldErrors.city}</p>}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="postalCode" className="text-xs uppercase tracking-wider text-muted-foreground">
+                    Postal Code
+                  </Label>
+                  <Input
+                    id="postalCode"
+                    type="text"
+                    autoComplete="postal-code"
+                    placeholder={selectedCountry?.postalCodePlaceholder || ""}
+                    value={postalCode}
+                    onChange={(e) => setPostalCode(e.target.value.toUpperCase())}
+                    className="h-12 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors"
+                  />
+                </div>
+              </div>
+            </>
+          )}
+
+          {fieldErrors.form && (
+            <p className="text-sm text-destructive text-center">{fieldErrors.form}</p>
+          )}
+
+          <Button type="submit" className="w-full h-12 mt-8" disabled={isLoading}>
+            {isLoading ? "Please wait..." : step === 1 ? "Continue" : "Complete Sign Up"}
+          </Button>
+
+          {step === 2 && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setStep(1)}
+              disabled={isLoading}
+              className="w-full h-12 bg-transparent"
+            >
+              Back
+            </Button>
+          )}
+
+          {step === 1 && (
+            <p className="text-center text-sm text-muted-foreground">
+              Already have an account?{" "}
+              <Link href="/auth/login" className="text-foreground hover:underline">
+                Sign in
+              </Link>
+            </p>
+          )}
+        </form>
       </div>
     </div>
   )

@@ -3,31 +3,32 @@
 import type React from "react"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { signupAsAdmin } from "@/app/actions/admin-signup"
+import { validateSignupForm } from "@/lib/validation"
 
 export default function AdminSignupPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [repeatPassword, setRepeatPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
+    setFieldErrors({})
 
-    if (password !== repeatPassword) {
-      setError("Passwords do not match")
-      return
-    }
+    const validation = validateSignupForm({
+      email,
+      password,
+      confirmPassword: repeatPassword,
+    })
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters")
+    if (!validation.isValid) {
+      setFieldErrors(validation.errors)
       return
     }
 
@@ -37,12 +38,12 @@ export default function AdminSignupPage() {
       const result = await signupAsAdmin(email, password)
 
       if (result.error) {
-        setError(result.error)
+        setFieldErrors({ form: result.error })
       } else {
         setShowSuccess(true)
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      setFieldErrors({ form: err instanceof Error ? err.message : "An error occurred" })
     } finally {
       setIsLoading(false)
     }
@@ -52,29 +53,21 @@ export default function AdminSignupPage() {
     return (
       <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10 bg-background">
         <div className="w-full max-w-md">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">Check your email</CardTitle>
-              <CardDescription>Confirmation email sent</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-blue-900 text-sm">
-                  We've sent a confirmation link to <strong>{email}</strong>. Click the link to confirm your email and
-                  set up your admin account.
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  After confirming your email, you'll be able to log in to the admin dashboard.
-                </p>
-                <Button asChild className="w-full">
-                  <Link href="/">Back to Home</Link>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-light tracking-tight mb-2">Check your email</h1>
+            <p className="text-muted-foreground">
+              We sent a confirmation link to <span className="font-medium text-foreground">{email}</span>
+            </p>
+          </div>
+          <div className="border-t pt-6">
+            <p className="text-sm text-muted-foreground text-center mb-6">
+              Click the link in your email to activate your admin account. After confirmation, you can log in to the
+              dashboard.
+            </p>
+            <Button asChild variant="outline" className="w-full h-12 bg-transparent">
+              <Link href="/">Back to Home</Link>
+            </Button>
+          </div>
         </div>
       </div>
     )
@@ -83,67 +76,80 @@ export default function AdminSignupPage() {
   return (
     <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10 bg-background">
       <div className="w-full max-w-md">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-2xl">Admin Sign Up</CardTitle>
-            <CardDescription>Create an admin account to manage the store</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="admin@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
+        <div className="text-center mb-8">
+          <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+            APEX
+          </Link>
+          <h1 className="text-3xl font-light tracking-tight mt-6 mb-2">Create Admin Account</h1>
+          <p className="text-muted-foreground text-sm">Set up your admin credentials</p>
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter a strong password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="text-xs uppercase tracking-wider text-muted-foreground">
+              Email
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="admin@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              className={`h-12 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors ${fieldErrors.email ? "border-destructive" : ""}`}
+            />
+            {fieldErrors.email && <p className="text-xs text-destructive">{fieldErrors.email}</p>}
+          </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="repeat-password">Repeat Password</Label>
-                <Input
-                  id="repeat-password"
-                  type="password"
-                  placeholder="Confirm your password"
-                  value={repeatPassword}
-                  onChange={(e) => setRepeatPassword(e.target.value)}
-                  required
-                />
-              </div>
+          <div className="space-y-2">
+            <Label htmlFor="password" className="text-xs uppercase tracking-wider text-muted-foreground">
+              Password
+            </Label>
+            <Input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+              className={`h-12 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors ${fieldErrors.password ? "border-destructive" : ""}`}
+            />
+            {fieldErrors.password && <p className="text-xs text-destructive">{fieldErrors.password}</p>}
+          </div>
 
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-red-900 text-sm">{error}</p>
-                </div>
-              )}
+          <div className="space-y-2">
+            <Label htmlFor="repeat-password" className="text-xs uppercase tracking-wider text-muted-foreground">
+              Confirm Password
+            </Label>
+            <Input
+              id="repeat-password"
+              type="password"
+              value={repeatPassword}
+              onChange={(e) => setRepeatPassword(e.target.value)}
+              required
+              autoComplete="new-password"
+              className={`h-12 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors ${fieldErrors.confirmPassword ? "border-destructive" : ""}`}
+            />
+            {fieldErrors.confirmPassword && <p className="text-xs text-destructive">{fieldErrors.confirmPassword}</p>}
+          </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Creating account..." : "Sign Up"}
-              </Button>
+          {fieldErrors.form && <p className="text-sm text-destructive text-center">{fieldErrors.form}</p>}
 
-              <div className="text-center text-xs text-muted-foreground">
-                <Link href="/admin/login" className="underline hover:text-foreground">
-                  Already have an admin account? Login instead
-                </Link>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+          <Button type="submit" className="w-full h-12 mt-8" disabled={isLoading}>
+            {isLoading ? "Creating account..." : "Create Account"}
+          </Button>
+
+          <p className="text-center text-sm text-muted-foreground">
+            Already have an admin account?{" "}
+            <Link href="/admin/login" className="text-foreground hover:underline">
+              Sign in
+            </Link>
+          </p>
+        </form>
       </div>
     </div>
   )

@@ -11,7 +11,7 @@ export function Navbar() {
   const [user, setUser] = useState<any>(null)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [cartCount, setCartCount] = useState(0)
-  const [currency, setCurrency] = useState<"USD" | "GBP" | "NGN">("USD")
+  const [currency, setCurrency] = useState<"USD" | "GBP" | "EUR">("USD")
   const supabase = createClient()
   const router = useRouter()
 
@@ -26,7 +26,7 @@ export function Navbar() {
       }
     }
 
-    const savedCurrency = localStorage.getItem("currency") as "USD" | "GBP" | "NGN" | null
+    const savedCurrency = localStorage.getItem("currency") as "USD" | "GBP" | "EUR" | null
     if (savedCurrency) {
       setCurrency(savedCurrency)
     }
@@ -40,7 +40,7 @@ export function Navbar() {
     router.push("/")
   }
 
-  const handleCurrencyChange = (newCurrency: "USD" | "GBP" | "NGN") => {
+  const handleCurrencyChange = (newCurrency: "USD" | "GBP" | "EUR") => {
     setCurrency(newCurrency)
     localStorage.setItem("currency", newCurrency)
   }
@@ -68,12 +68,12 @@ export function Navbar() {
 
             <select
               value={currency}
-              onChange={(e) => handleCurrencyChange(e.target.value as "USD" | "GBP" | "NGN")}
+              onChange={(e) => handleCurrencyChange(e.target.value as "USD" | "GBP" | "EUR")}
               className="px-3 py-1 border border-border rounded bg-background text-foreground cursor-pointer transition-colors duration-200 hover:bg-secondary"
             >
               <option value="USD">USD ($)</option>
               <option value="GBP">GBP (£)</option>
-              <option value="NGN">NGN (₦)</option>
+              <option value="EUR">EUR (€)</option>
             </select>
 
             {user ? (
@@ -156,12 +156,12 @@ export function Navbar() {
             </Link>
             <select
               value={currency}
-              onChange={(e) => handleCurrencyChange(e.target.value as "USD" | "GBP" | "NGN")}
+              onChange={(e) => handleCurrencyChange(e.target.value as "USD" | "GBP" | "EUR")}
               className="px-3 py-1 border border-border rounded bg-background text-foreground cursor-pointer transition-colors duration-200 hover:bg-secondary"
             >
               <option value="USD">USD ($)</option>
               <option value="GBP">GBP (£)</option>
-              <option value="NGN">NGN (₦)</option>
+              <option value="EUR">EUR (€)</option>
             </select>
             {user ? (
               <>

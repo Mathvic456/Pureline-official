@@ -15,30 +15,22 @@ export async function promoteUserToAdmin(userId: string) {
 
     const { data, error } = await adminClient
       .from("admin_users")
-      .upsert([{ id: userId }], { onConflict: "id" })
+      .insert([{ id: userId }])
       .select()
 
-    console.log("[v0] Upsert response - data:", data, "error:", error)
+    console.log("[v0] Insert response - data:", data, "error:", error, "error code:", error?.code)
 
     if (error) {
-      console.log("[v0] Error promoting to admin:", error.message)
-      return { success: false, error: error.message }
+      if (error.code === "23505") {
+        // Duplicate key error - user already exists
+        console.log("[v0] User already exists in admin_users")
+        return { success: true, message: "User already admin" }
+      }
+      console.log("[v0] Error inserting admin user:", error.message, error.details)
+      return { success: false, error: `Insert failed: ${error.message}` }
     }
 
-    const { data: verifyData, error: verifyError } = await adminClient
-      .from("admin_users")
-      .select("id")
-      .eq("id", userId)
-      .single()
-
-    console.log("[v0] Verification - data:", verifyData, "error:", verifyError)
-
-    if (verifyError || !verifyData) {
-      console.log("[v0] Verification failed:", verifyError?.message)
-      return { success: false, error: "Failed to verify admin promotion" }
-    }
-
-    console.log("[v0] PROMOTE SUCCESS - Admin user verified:", verifyData.id)
+    console.log("[v0] Successfully inserted admin user")
     return { success: true, message: "User promoted to admin" }
   } catch (error) {
     console.error("[v0] PROMOTE EXCEPTION:", error)

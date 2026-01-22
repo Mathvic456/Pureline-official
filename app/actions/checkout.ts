@@ -53,7 +53,7 @@ export async function createCheckoutSession(
     const stripeCurrencyMap: Record<Currency, string> = {
       USD: "usd",
       GBP: "gbp",
-      NGN: "ngn",
+      EUR: "eur",
     }
 
     const stripeCurrency = stripeCurrencyMap[currency]

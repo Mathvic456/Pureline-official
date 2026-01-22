@@ -184,7 +184,7 @@ export default async function Home() {
             <div className="space-y-4">
               <h3 className="text-2xl font-bold">Multi-Currency</h3>
               <p className="text-muted-foreground">
-                Shop in your preferred currency with support for USD, GBP, and NGN. Real-time currency conversion
+                Shop in your preferred currency with support for USD, GBP, and EUR. Real-time currency conversion
                 available.
               </p>
             </div>
