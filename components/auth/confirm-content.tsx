@@ -4,6 +4,8 @@ import { useEffect, useState, useRef, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { promoteUserToAdmin } from "@/app/actions/promote-admin-on-confirm"
 import { saveUserProfile } from "@/app/actions/user-profile"
@@ -22,12 +24,42 @@ export function ConfirmContent() {
   const [errorMessage, setErrorMessage] = useState("")
   const [countdown, setCountdown] = useState(5)
   const [debugInfo, setDebugInfo] = useState<string[]>([])
+  const [manualEmail, setManualEmail] = useState("")
+  const [isManualConfirming, setIsManualConfirming] = useState(false)
+  const [showManualConfirm, setShowManualConfirm] = useState(false)
   const isAdminSignup = searchParams.get("admin") === "true"
   const supabase = createClient()
   const hasVerified = useRef(false)
   const countdownRef = useRef<NodeJS.Timeout | null>(null)
 
   const redirectUrl = isAdminSignup ? "/admin/login" : "/auth/login"
+  
+  // Manual confirmation handler
+  const handleManualConfirm = async () => {
+    if (!manualEmail) return
+    
+    setIsManualConfirming(true)
+    try {
+      const response = await fetch("/api/auth/confirm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: manualEmail, isAdmin: isAdminSignup }),
+      })
+      
+      const data = await response.json()
+      
+      if (data.success) {
+        setStatus("success")
+        startRedirectCountdown()
+      } else {
+        setErrorMessage(data.error || "Unable to confirm email")
+      }
+    } catch (err) {
+      setErrorMessage(err instanceof Error ? err.message : "An error occurred")
+    } finally {
+      setIsManualConfirming(false)
+    }
+  }
   
   // Debug logger
   const addDebug = useCallback((msg: string) => {
@@ -156,6 +188,20 @@ export function ConfirmContent() {
           
           if (error) {
             addDebug(`Code exchange error: ${error.message}`)
+            
+            // Check if this is a PKCE error (different browser)
+            const isPKCEError = error.message.toLowerCase().includes("pkce") || 
+                               error.message.toLowerCase().includes("code verifier")
+            
+            if (isPKCEError) {
+              addDebug("PKCE error detected - attempting server-side confirmation fallback")
+              
+              // Try to get the user's email from the URL or prompt them
+              // For now, show a message asking them to enter their email
+              setStatus("error")
+              setErrorMessage(getReadableError(error.message))
+              return
+            }
             
             // Check if user might already be confirmed
             const { data: { session: retrySession } } = await supabase.auth.getSession()
@@ -435,16 +481,73 @@ export function ConfirmContent() {
         <p className="text-muted-foreground text-sm mb-6">
           The link may have expired or already been used. Try signing in - if your email was confirmed, you should be able to log in.
         </p>
-        <div className="space-y-3">
-          <Button asChild className="w-full h-12">
-            <Link href={redirectUrl}>Try Signing In</Link>
-          </Button>
-          <Button asChild variant="outline" className="w-full h-12 bg-transparent">
-            <Link href={isAdminSignup ? "/admin/signup" : "/auth/sign-up"}>
-              Sign Up Again
-            </Link>
-          </Button>
-        </div>
+        
+        {/* Manual confirmation fallback */}
+        {!showManualConfirm ? (
+          <div className="space-y-3">
+            <Button asChild className="w-full h-12">
+              <Link href={redirectUrl}>Try Signing In</Link>
+            </Button>
+            <Button asChild variant="outline" className="w-full h-12 bg-transparent">
+              <Link href={isAdminSignup ? "/admin/signup" : "/auth/sign-up"}>
+                Sign Up Again
+              </Link>
+            </Button>
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Or</span>
+              </div>
+            </div>
+            <Button 
+              variant="ghost" 
+              className="w-full h-12 text-muted-foreground hover:text-foreground"
+              onClick={() => setShowManualConfirm(true)}
+            >
+              Confirm email manually
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-4 text-left">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter the email you signed up with"
+                value={manualEmail}
+                onChange={(e) => setManualEmail(e.target.value)}
+                className="h-12"
+              />
+              <p className="text-xs text-muted-foreground">
+                Enter the email address you used to sign up. We will confirm your account.
+              </p>
+            </div>
+            <Button 
+              className="w-full h-12"
+              onClick={handleManualConfirm}
+              disabled={!manualEmail || isManualConfirming}
+            >
+              {isManualConfirming ? (
+                <>
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-background border-t-transparent mr-2" />
+                  Confirming...
+                </>
+              ) : (
+                "Confirm My Email"
+              )}
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full h-12 bg-transparent"
+              onClick={() => setShowManualConfirm(false)}
+            >
+              Back
+            </Button>
+          </div>
+        )}
       </div>
     </div>
   )
