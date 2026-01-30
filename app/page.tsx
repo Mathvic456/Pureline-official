@@ -183,7 +183,7 @@ export default async function Home() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                        {product.categories?.name || "APEX"}
+                        {product.categories?.name || "LuxuryByEsta"}
                       </p>
                       <h3 className="font-medium group-hover:opacity-60 transition-opacity line-clamp-1">
                         {product.name}
@@ -208,7 +208,7 @@ export default async function Home() {
       <section className="py-20 lg:py-32">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif mb-4">Why Choose APEX</h2>
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif mb-4">Why Choose LuxuryByEsta</h2>
             <p className="text-muted-foreground max-w-lg mx-auto">
               We believe in quality, sustainability, and exceptional customer service
             </p>
@@ -262,17 +262,17 @@ export default async function Home() {
             <div className="relative aspect-[4/5] overflow-hidden img-zoom">
               <Image
                 src="https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&q=80"
-                alt="About APEX"
+                alt="About LuxuryByEsta"
                 fill
                 className="object-cover"
               />
             </div>
             <div className="space-y-6">
               <p className="text-sm tracking-[0.2em] uppercase text-muted-foreground">About Us</p>
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif">The APEX Story</h2>
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif">The LuxuryByEsta Story</h2>
               <div className="space-y-4 text-muted-foreground">
                 <p>
-                  APEX was founded with a simple mission: to bring exceptional quality products 
+                  LuxuryByEsta was founded with a simple mission: to bring exceptional quality products 
                   to discerning customers who appreciate the finer things in life.
                 </p>
                 <p>
@@ -346,7 +346,7 @@ export default async function Home() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif mb-6">Ready to Discover?</h2>
           <p className="text-primary-foreground/70 max-w-lg mx-auto mb-8">
-            Join thousands of satisfied customers who have elevated their lifestyle with APEX products.
+            Join thousands of satisfied customers who have elevated their lifestyle with LuxuryByEsta products.
           </p>
           <Link 
             href="/categories"

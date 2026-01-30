@@ -272,7 +272,7 @@ export default function CategoriesPage() {
                   </div>
                   <div className="space-y-1">
                     <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                      {product.categories?.name || "APEX"}
+                      {product.categories?.name || "LuxuryByEsta"}
                     </p>
                     <h3 className="font-medium group-hover:opacity-60 transition-opacity line-clamp-1">
                       {product.name}
@@ -300,7 +300,7 @@ export default function CategoriesPage() {
                   </div>
                   <div className="flex-1 py-2">
                     <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">
-                      {product.categories?.name || "APEX"}
+                      {product.categories?.name || "LuxuryByEsta"}
                     </p>
                     <h3 className="font-medium mb-2 group-hover:opacity-60 transition-opacity">
                       {product.name}

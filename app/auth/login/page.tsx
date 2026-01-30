@@ -50,7 +50,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="mb-12">
             <Link href="/" className="text-2xl font-serif tracking-wider hover:opacity-60 transition-opacity">
-              APEX
+              LuxuryByEsta
             </Link>
           </div>
 

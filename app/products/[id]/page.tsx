@@ -244,7 +244,7 @@ export default function ProductDetailPage() {
             {/* Category & Name */}
             <div>
               <p className="text-sm text-muted-foreground uppercase tracking-wider mb-2">
-                {product.categories?.name || "APEX"}
+                {product.categories?.name || "LuxuryByEsta"}
               </p>
               <h1 className="text-3xl lg:text-4xl font-serif mb-4">{product.name}</h1>
               <p className="text-2xl">{formatPrice(price, currency)}</p>
@@ -365,7 +365,7 @@ export default function ProductDetailPage() {
                     </div>
                     <div className="space-y-1">
                       <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                        {item.categories?.name || "APEX"}
+                        {item.categories?.name || "LuxuryByEsta"}
                       </p>
                       <h3 className="font-medium group-hover:opacity-60 transition-opacity line-clamp-1">
                         {item.name}
