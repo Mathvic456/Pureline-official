@@ -11,6 +11,8 @@ import { useState, useEffect } from "react"
 import { saveUserProfile } from "@/app/actions/user-profile"
 import { validateSignupForm, validateProfileForm } from "@/lib/validation"
 import { countries, type CountryData, validatePhoneForCountry, formatPhoneWithCountryCode } from "@/lib/countries"
+import { CountryFlagSelector } from "@/components/country-flag-selector"
+import Image from "next/image"
 
 export default function SignUpPage() {
   const [step, setStep] = useState(1)
@@ -294,33 +296,16 @@ export default function SignUpPage() {
                 </Label>
                 <div className="flex items-center h-12 border-0 border-b border-border">
                   {/* Flag Dropdown */}
-                  <div className="relative">
-                    <select
-                      id="country"
-                      value={selectedCountry?.code || ""}
-                      onChange={(e) => handleCountryChange(e.target.value)}
-                      required
-                      autoComplete="country"
-                      className="appearance-none bg-transparent h-12 pl-2 pr-8 text-2xl cursor-pointer focus:outline-none"
-                      style={{ width: selectedCountry ? "auto" : "120px" }}
-                    >
-                      <option value="" className="text-sm">Select</option>
-                      {countries.map((country) => (
-                        <option key={country.code} value={country.code} className="text-base">
-                          {country.flag} {country.name}
-                        </option>
-                      ))}
-                    </select>
-                    <div className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </div>
-                  </div>
+                  <CountryFlagSelector
+                    countries={countries}
+                    selectedCountry={selectedCountry}
+                    onSelect={handleCountryChange}
+                    required
+                  />
                   
                   {/* Country Code Display */}
                   {selectedCountry && (
-                    <span className="text-muted-foreground whitespace-nowrap px-2 border-r border-border">
+                    <span className="text-muted-foreground whitespace-nowrap px-2 border-r border-border text-sm">
                       {selectedCountry.dialCode}
                     </span>
                   )}
