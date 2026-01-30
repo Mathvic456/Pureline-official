@@ -80,19 +80,18 @@ export async function POST(request: NextRequest) {
     if (user.email_confirmed_at) {
       // User is already confirmed - if admin signup, promote them
       if (isAdmin) {
-        const { error: updateError } = await adminClient
-          .from("profiles")
-          .update({ role: "admin" })
-          .eq("id", user.id)
+        const { error: adminError } = await adminClient
+          .from("admin_users")
+          .upsert({ user_id: user.id }, { onConflict: "user_id" })
 
-        if (updateError) {
-          console.error("[API] Admin promotion error:", updateError)
+        if (adminError) {
+          console.error("[API] Admin promotion error:", adminError)
         }
       }
 
       return NextResponse.json({
         success: true,
-        message: "Email already confirmed",
+        message: "Email already confirmed. You can now sign in.",
         confirmed: true,
       })
     }
@@ -109,13 +108,12 @@ export async function POST(request: NextRequest) {
 
     // If admin signup, promote to admin
     if (isAdmin) {
-      const { error: profileError } = await adminClient
-        .from("profiles")
-        .update({ role: "admin" })
-        .eq("id", user.id)
+      const { error: adminError } = await adminClient
+        .from("admin_users")
+        .upsert({ user_id: user.id }, { onConflict: "user_id" })
 
-      if (profileError) {
-        console.error("[API] Admin promotion error:", profileError)
+      if (adminError) {
+        console.error("[API] Admin promotion error:", adminError)
       }
     }
 
