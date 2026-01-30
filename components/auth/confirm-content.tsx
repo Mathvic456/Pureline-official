@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useEffect, useState, useRef, useCallback } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
@@ -17,21 +17,35 @@ type ConfirmStatus =
 
 export function ConfirmContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [status, setStatus] = useState<ConfirmStatus>("verifying")
   const [errorMessage, setErrorMessage] = useState("")
-  const [countdown, setCountdown] = useState(3)
+  const [countdown, setCountdown] = useState(5)
+  const [debugInfo, setDebugInfo] = useState<string[]>([])
   const isAdminSignup = searchParams.get("admin") === "true"
   const supabase = createClient()
+  const hasVerified = useRef(false)
+  const countdownRef = useRef<NodeJS.Timeout | null>(null)
 
   const redirectUrl = isAdminSignup ? "/admin/login" : "/auth/login"
+  
+  // Debug logger
+  const addDebug = useCallback((msg: string) => {
+    console.log("[v0] Email Confirm:", msg)
+    setDebugInfo(prev => [...prev, `${new Date().toISOString().split('T')[1].split('.')[0]} - ${msg}`])
+  }, [])
 
   // Helper function to save pending profile from localStorage
-  const savePendingProfileData = async () => {
+  const savePendingProfileData = useCallback(async () => {
     try {
       const pendingProfileStr = localStorage.getItem("pendingUserProfile")
-      if (!pendingProfileStr) return
+      if (!pendingProfileStr) {
+        addDebug("No pending profile in localStorage")
+        return
+      }
       
       const pendingProfile = JSON.parse(pendingProfileStr)
+      addDebug(`Saving profile for: ${pendingProfile.firstName} ${pendingProfile.lastName}`)
       
       const result = await saveUserProfile(
         pendingProfile.firstName,
@@ -45,126 +59,235 @@ export function ConfirmContent() {
       
       if (result.success) {
         localStorage.removeItem("pendingUserProfile")
+        addDebug("Profile saved and localStorage cleared")
+      } else {
+        addDebug(`Profile save failed: ${result.message}`)
       }
     } catch (err) {
-      // Silently fail - profile can be updated later in account settings
+      addDebug(`Profile save error: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
-  }
+  }, [addDebug])
 
   // Helper to promote admin user
-  const promoteAdmin = async (userId: string) => {
+  const promoteAdmin = useCallback(async (userId: string) => {
     if (!isAdminSignup) return
     try {
-      await promoteUserToAdmin(userId)
+      addDebug(`Promoting user ${userId} to admin`)
+      const result = await promoteUserToAdmin(userId)
+      addDebug(`Admin promotion result: ${JSON.stringify(result)}`)
     } catch (err) {
-      // Non-critical - admin can be promoted manually if needed
+      addDebug(`Admin promotion error: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
-  }
+  }, [isAdminSignup, addDebug])
+
+  // Start countdown and redirect
+  const startRedirectCountdown = useCallback(() => {
+    if (countdownRef.current) {
+      clearInterval(countdownRef.current)
+    }
+    
+    countdownRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          if (countdownRef.current) {
+            clearInterval(countdownRef.current)
+          }
+          router.push(redirectUrl)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+  }, [redirectUrl, router])
 
   useEffect(() => {
+    // Cleanup interval on unmount
+    return () => {
+      if (countdownRef.current) {
+        clearInterval(countdownRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    // Prevent double execution
+    if (hasVerified.current) return
+    hasVerified.current = true
+
     const verifyEmail = async () => {
       try {
-        // First check if user already has a valid session (email already confirmed)
-        const { data: { session } } = await supabase.auth.getSession()
+        addDebug("Starting email verification...")
+        addDebug(`URL: ${window.location.href}`)
+        
+        // Get all URL parameters
+        const token_hash = searchParams.get("token_hash")
+        const type = searchParams.get("type")
+        const code = searchParams.get("code")
+        const error_code = searchParams.get("error_code")
+        const error_description = searchParams.get("error_description")
+        
+        addDebug(`Params - token_hash: ${token_hash ? 'present' : 'none'}, type: ${type}, code: ${code ? 'present' : 'none'}`)
+        
+        // Check for error in URL (from Supabase redirect)
+        if (error_code || error_description) {
+          addDebug(`URL Error - code: ${error_code}, desc: ${error_description}`)
+          setStatus("error")
+          setErrorMessage(error_description || `Error code: ${error_code}`)
+          return
+        }
 
-        if (session?.user?.email_confirmed_at) {
-          // User is already confirmed - save profile and redirect
+        // First check if user already has a valid session (email already confirmed)
+        const { data: { session: existingSession }, error: sessionError } = await supabase.auth.getSession()
+        addDebug(`Existing session check - has session: ${!!existingSession}, error: ${sessionError?.message || 'none'}`)
+
+        if (existingSession?.user?.email_confirmed_at) {
+          addDebug(`User already confirmed at: ${existingSession.user.email_confirmed_at}`)
           await savePendingProfileData()
-          await promoteAdmin(session.user.id)
+          await promoteAdmin(existingSession.user.id)
           setStatus("already-confirmed")
           startRedirectCountdown()
           return
         }
 
-        // Get confirmation parameters from URL
-        const token_hash = searchParams.get("token_hash")
-        const type = searchParams.get("type")
-
-        // If no token provided, check if there's a code in the URL hash (PKCE flow)
-        if (!token_hash) {
-          // Check URL hash for PKCE code
-          const hashParams = new URLSearchParams(window.location.hash.substring(1))
-          const accessToken = hashParams.get("access_token")
+        // Handle PKCE flow with code parameter
+        if (code) {
+          addDebug("Handling PKCE flow with code parameter")
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code)
           
-          if (accessToken) {
-            // PKCE flow - token is in the hash
-            const { data: { session: newSession }, error } = await supabase.auth.getSession()
+          if (error) {
+            addDebug(`Code exchange error: ${error.message}`)
             
-            if (newSession?.user) {
+            // Check if user might already be confirmed
+            const { data: { session: retrySession } } = await supabase.auth.getSession()
+            if (retrySession?.user?.email_confirmed_at) {
+              addDebug("User was already confirmed despite code error")
               await savePendingProfileData()
-              await promoteAdmin(newSession.user.id)
-              setStatus("success")
-              startRedirectCountdown()
-              return
-            }
-          }
-          
-          setStatus("invalid-link")
-          setErrorMessage("No confirmation token found in the link")
-          return
-        }
-
-        if (type !== "email" && type !== "signup" && type !== "magiclink") {
-          setStatus("invalid-link")
-          setErrorMessage("Invalid confirmation link type")
-          return
-        }
-
-        // Attempt to verify the OTP
-        const { data, error } = await supabase.auth.verifyOtp({
-          type: type === "signup" ? "signup" : "email",
-          token_hash,
-        })
-
-        if (error) {
-          // Check if the error indicates the token was already used
-          if (error.message.includes("expired") || error.message.includes("invalid")) {
-            // Token expired or invalid - check if user can still login (already confirmed)
-            const { data: { session: existingSession } } = await supabase.auth.getSession()
-            
-            if (existingSession?.user?.email_confirmed_at) {
-              await savePendingProfileData()
-              await promoteAdmin(existingSession.user.id)
+              await promoteAdmin(retrySession.user.id)
               setStatus("already-confirmed")
               startRedirectCountdown()
               return
             }
+            
+            setStatus("error")
+            setErrorMessage(getReadableError(error.message))
+            return
           }
           
+          if (data.session?.user) {
+            addDebug(`PKCE success - user: ${data.session.user.id}`)
+            await savePendingProfileData()
+            await promoteAdmin(data.session.user.id)
+            setStatus("success")
+            startRedirectCountdown()
+            return
+          }
+        }
+
+        // Handle token_hash flow (OTP verification)
+        if (token_hash) {
+          addDebug("Handling token_hash OTP flow")
+          
+          const otpType = type === "signup" ? "signup" : type === "email" ? "email" : "signup"
+          addDebug(`Verifying OTP with type: ${otpType}`)
+          
+          const { data, error } = await supabase.auth.verifyOtp({
+            type: otpType as "signup" | "email",
+            token_hash,
+          })
+
+          if (error) {
+            addDebug(`OTP verification error: ${error.message}`)
+            
+            // Check if the error indicates the token was already used
+            const { data: { session: retrySession } } = await supabase.auth.getSession()
+            
+            if (retrySession?.user?.email_confirmed_at) {
+              addDebug("User confirmed despite OTP error (likely already used token)")
+              await savePendingProfileData()
+              await promoteAdmin(retrySession.user.id)
+              setStatus("already-confirmed")
+              startRedirectCountdown()
+              return
+            }
+            
+            setStatus("error")
+            setErrorMessage(getReadableError(error.message))
+            return
+          }
+
+          if (data.user) {
+            addDebug(`OTP success - user: ${data.user.id}`)
+            await savePendingProfileData()
+            await promoteAdmin(data.user.id)
+            setStatus("success")
+            startRedirectCountdown()
+            return
+          }
+        }
+
+        // Check URL hash for implicit flow tokens
+        const hashParams = new URLSearchParams(window.location.hash.substring(1))
+        const accessToken = hashParams.get("access_token")
+        const hashError = hashParams.get("error")
+        const hashErrorDesc = hashParams.get("error_description")
+        
+        addDebug(`Hash params - access_token: ${accessToken ? 'present' : 'none'}, error: ${hashError || 'none'}`)
+        
+        if (hashError) {
           setStatus("error")
-          setErrorMessage(error.message || "Failed to confirm email")
+          setErrorMessage(hashErrorDesc || hashError)
           return
         }
-
-        // Verification successful
-        if (data.user) {
-          await savePendingProfileData()
-          await promoteAdmin(data.user.id)
+        
+        if (accessToken) {
+          addDebug("Handling implicit flow with access_token in hash")
+          // The session should be automatically set by Supabase
+          const { data: { session: hashSession } } = await supabase.auth.getSession()
+          
+          if (hashSession?.user) {
+            addDebug(`Hash session found - user: ${hashSession.user.id}`)
+            await savePendingProfileData()
+            await promoteAdmin(hashSession.user.id)
+            setStatus("success")
+            startRedirectCountdown()
+            return
+          }
         }
-
-        setStatus("success")
-        startRedirectCountdown()
+        
+        // No valid parameters found
+        addDebug("No valid confirmation parameters found")
+        setStatus("invalid-link")
+        setErrorMessage("This confirmation link is missing required parameters. Please check your email for the correct link or request a new one.")
+        
       } catch (error) {
+        addDebug(`Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`)
         setStatus("error")
-        setErrorMessage(error instanceof Error ? error.message : "An unexpected error occurred")
+        setErrorMessage(error instanceof Error ? error.message : "An unexpected error occurred during verification")
       }
     }
 
-    const startRedirectCountdown = () => {
-      const interval = setInterval(() => {
-        setCountdown((prev) => {
-          if (prev <= 1) {
-            clearInterval(interval)
-            window.location.href = redirectUrl
-            return 0
-          }
-          return prev - 1
-        })
-      }, 1000)
-    }
-
     verifyEmail()
-  }, [searchParams, supabase, isAdminSignup, redirectUrl])
+  }, [searchParams, supabase, isAdminSignup, addDebug, savePendingProfileData, promoteAdmin, startRedirectCountdown])
+  
+  // Helper to convert Supabase errors to user-friendly messages
+  const getReadableError = (message: string): string => {
+    const errorMap: Record<string, string> = {
+      "Token has expired or is invalid": "This confirmation link has expired. Please sign up again to receive a new link.",
+      "Invalid token": "This confirmation link is invalid. Please check your email for the correct link.",
+      "User already registered": "This email address is already registered. Try signing in instead.",
+      "Email link is invalid or has expired": "This link has expired or has already been used. If you already confirmed, try signing in.",
+      "otp_expired": "This confirmation link has expired. Please sign up again.",
+      "access_denied": "Access was denied. Please try signing up again.",
+    }
+    
+    for (const [key, value] of Object.entries(errorMap)) {
+      if (message.toLowerCase().includes(key.toLowerCase())) {
+        return value
+      }
+    }
+    
+    return message
+  }
 
   // Loading state
   if (status === "verifying") {

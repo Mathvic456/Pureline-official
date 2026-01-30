@@ -12,14 +12,18 @@ export async function saveUserProfile(
   country?: string,
   postalCode?: string,
 ) {
-  const supabase = await createClient(cookies())
+  console.log("[v0] saveUserProfile called with:", { firstName, lastName, phoneNumber, city, country })
+  
+  const supabase = await createClient()
   const { data: user, error: authError } = await supabase.auth.getUser()
 
+  console.log("[v0] Auth check - user:", user?.user?.id, "error:", authError?.message)
+
   if (authError || !user.user) {
-    console.log("[v0] User not authenticated yet")
+    console.log("[v0] User not authenticated - cannot save profile yet")
     return {
       success: false,
-      message: "User not authenticated",
+      message: "User not authenticated. Profile will be saved after email confirmation.",
     }
   }
 
@@ -69,7 +73,7 @@ export async function saveUserProfile(
 }
 
 export async function getUserProfile() {
-  const supabase = await createClient(cookies())
+  const supabase = await createClient()
   const { data: user, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user.user) {
@@ -93,7 +97,7 @@ export async function addUserAddress(
   postalCode: string,
   isDefault = false,
 ) {
-  const supabase = await createClient(cookies())
+  const supabase = await createClient()
   const { data: user, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user.user) {
@@ -134,7 +138,7 @@ export async function addUserAddress(
 }
 
 export async function getUserAddresses() {
-  const supabase = await createClient(cookies())
+  const supabase = await createClient()
   const { data: user, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user.user) {
