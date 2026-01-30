@@ -40,21 +40,21 @@ A full-stack, production-ready ecommerce platform built with Next.js 16, React 1
 ### Installation
 
 1. **Clone and install dependencies**
-   ```bash
+   \`\`\`bash
    git clone <repository>
    cd apex-ecommerce
    npm install
-   ```
+   \`\`\`
 
 2. **Set up environment variables**
    - Create `.env.local` with:
-   ```
+   \`\`\`
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
    SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
    STRIPE_SECRET_KEY=your_stripe_secret_key
    NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=your_stripe_publishable_key
-   ```
+   \`\`\`
 
 3. **Set up database**
    - Open Supabase SQL Editor
@@ -65,15 +65,15 @@ A full-stack, production-ready ecommerce platform built with Next.js 16, React 1
    - Run admin setup query in Supabase (see ECOMMERCE_SETUP.md)
 
 5. **Start development server**
-   ```bash
+   \`\`\`bash
    npm run dev
-   ```
+   \`\`\`
 
 Visit `http://localhost:3000` to start shopping!
 
 ## Project Structure
 
-```
+\`\`\`
 ├── app/
 │   ├── page.tsx                 # Homepage
 │   ├── layout.tsx               # Root layout
@@ -98,7 +98,7 @@ Visit `http://localhost:3000` to start shopping!
 │   ├── 001_create_tables.sql    # Database schema
 │   └── 002_create_admin_user.sql# Admin setup
 └── middleware.ts                # Auth middleware
-```
+\`\`\`
 
 ## Key Pages
 
@@ -233,21 +233,21 @@ All pages are optimized for each breakpoint with:
 ## Customization
 
 ### Change Branding
-```tsx
+\`\`\`tsx
 // app/page.tsx, components/navbar.tsx
 - Change "APEX" to your brand name
 - Update logo/favicon in public/
-```
+\`\`\`
 
 ### Customize Colors
-```css
+\`\`\`css
 /* app/globals.css */
 :root {
   --primary: oklch(0.205 0 0);      /* Black */
   --secondary: oklch(0.97 0 0);     /* White */
   /* ... other colors ... */
 }
-```
+\`\`\`
 
 ### Add New Features
 - Wishlist: Add wishlist table and UI

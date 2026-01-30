@@ -27,7 +27,7 @@
 
 ## Database Tables
 
-```sql
+\`\`\`sql
 -- View all products
 SELECT * FROM products;
 
@@ -42,46 +42,46 @@ SELECT * FROM admin_users;
 
 -- Find users by email
 SELECT id, email FROM auth.users;
-```
+\`\`\`
 
 ## Common Tasks
 
 ### Add Admin User
-```sql
+\`\`\`sql
 INSERT INTO public.admin_users (id)
 SELECT id FROM auth.users WHERE email = 'admin@example.com'
-```
+\`\`\`
 
 ### Add Test Products
-```sql
+\`\`\`sql
 INSERT INTO public.products (name, description, price, image_url) VALUES
 ('Product Name', 'Description', 2999, 'https://image-url.com/img.jpg');
-```
+\`\`\`
 
 ### View Orders for a Customer
-```sql
+\`\`\`sql
 SELECT * FROM orders WHERE user_id = 'user-id' ORDER BY created_at DESC;
-```
+\`\`\`
 
 ### Calculate Total Revenue
-```sql
+\`\`\`sql
 SELECT SUM(total_amount)/100 as total_revenue FROM orders WHERE status = 'completed';
-```
+\`\`\`
 
 ### Clear a User's Cart
-```sql
+\`\`\`sql
 DELETE FROM cart_items WHERE user_id = 'user-id';
-```
+\`\`\`
 
 ## Environment Variables
 
-```env
+\`\`\`env
 NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=xxx
 SUPABASE_SERVICE_ROLE_KEY=xxx
 STRIPE_SECRET_KEY=sk_test_xxx
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
-```
+\`\`\`
 
 ## Stripe Test Cards
 
@@ -113,10 +113,10 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_xxx
 
 ## Order Number Format
 
-```
+\`\`\`
 ORD-{unix_timestamp}-{random_4_digits}
 Example: ORD-1705123456789-9876
-```
+\`\`\`
 
 ## Price Format
 

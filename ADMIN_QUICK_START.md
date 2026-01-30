@@ -16,10 +16,10 @@
    - Confirm your email
 
 2. **Add to Admin List** - Run in Supabase SQL Editor:
-   ```sql
+   \`\`\`sql
    INSERT INTO public.admin_users (id)
    SELECT id FROM auth.users WHERE email = 'admin@example.com'
-   ```
+   \`\`\`
 
 3. **Login** at `/admin/login`
    - Use same email and password
@@ -46,11 +46,11 @@
 
 Save these somewhere safe:
 
-```
+\`\`\`
 Email: admin@example.com
 Password: [Your password from signup]
 Admin Login: http://localhost:3000/admin/login
-```
+\`\`\`
 
 ---
 

@@ -50,10 +50,10 @@ This guide walks you through setting up Google and Apple OAuth authentication fo
    - Select **Web application**
    - Name it (e.g., "Ecommerce Web Client")
    - Under "Authorized redirect URIs", add:
-     ```
+     \`\`\`
      https://yoursite.com/auth/callback
      http://localhost:3000/auth/callback
-     ```
+     \`\`\`
    - Click "CREATE"
 
 5. A popup will appear with your credentials:
@@ -104,15 +104,15 @@ You'll need these for Supabase in the next section.
 6. Click "Configure"
 7. Under "Primary App ID", select the App ID you created
 8. Under "Web Domains", add:
-   ```
+   \`\`\`
    yoursite.com
    localhost:3000
-   ```
+   \`\`\`
 9. Under "Return URLs", add:
-   ```
+   \`\`\`
    https://yoursite.com/auth/callback
    http://localhost:3000/auth/callback
-   ```
+   \`\`\`
 10. Click "Save"
 11. Click "Continue" and then "Register"
 
@@ -170,21 +170,21 @@ Keep these safe:
 Make sure your Supabase redirect URLs are added to both Google Cloud Console and Apple Developer:
 
 **In Supabase** (shown under each provider):
-```
+\`\`\`
 https://xxxxx.supabase.co/auth/v1/callback
-```
+\`\`\`
 
 **In Google Cloud Console** (Credentials):
-```
+\`\`\`
 https://yoursite.com/auth/callback
 http://localhost:3000/auth/callback
-```
+\`\`\`
 
 **In Apple Developer** (Service ID - Return URLs):
-```
+\`\`\`
 https://yoursite.com/auth/callback
 http://localhost:3000/auth/callback
-```
+\`\`\`
 
 ---
 
@@ -233,9 +233,9 @@ Once deployed to production:
 
 **Fix**:
 - In **Google Cloud Console** → **Credentials**, add the Supabase callback URL:
-  ```
+  \`\`\`
   https://xxxxx.supabase.co/auth/v1/callback
-  ```
+  \`\`\`
 - In **Apple Developer** → **Service ID** → **Configure**, ensure the return URLs include the Supabase callback
 
 ### "The provided token is invalid" Error
@@ -300,7 +300,7 @@ Before going live:
 
 To request additional permissions, edit `components/auth/oauth-buttons.tsx`:
 
-```typescript
+\`\`\`typescript
 // For Google
 const { data, error } = await supabase.auth.signInWithOAuth({
   provider: 'google',
@@ -317,7 +317,7 @@ const { data, error } = await supabase.auth.signInWithOAuth({
     redirectTo: `${window.location.origin}/auth/callback`,
   },
 })
-```
+\`\`\`
 
 ### Auto-Link OAuth Accounts
 

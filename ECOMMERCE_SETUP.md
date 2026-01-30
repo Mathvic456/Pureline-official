@@ -9,7 +9,7 @@ This is a fully functional black and white themed ecommerce platform with:
 
 ## Project Structure
 
-```
+\`\`\`
 app/
 ├── page.tsx                 # Homepage
 ├── auth/
@@ -40,7 +40,7 @@ lib/
 scripts/
 ├── 001_create_tables.sql   # Database schema
 └── 002_create_admin_user.sql # Admin setup
-```
+\`\`\`
 
 ## Database Schema
 
@@ -66,19 +66,19 @@ All tables have Row Level Security (RLS) enabled for data protection.
 2. Confirm your email
 3. Go to Supabase dashboard → SQL Editor
 4. Run this query to make the account an admin:
-   ```sql
+   \`\`\`sql
    INSERT INTO public.admin_users (id)
    SELECT id FROM auth.users WHERE email = 'admin@example.com'
-   ```
+   \`\`\`
 
 ### Step 3: Add Sample Products (Optional)
 Add products through the admin dashboard at `/admin/products` or via Supabase SQL:
-```sql
+\`\`\`sql
 INSERT INTO public.products (name, description, price, image_url) VALUES
 ('Premium Watch', 'Luxury black stainless steel watch', 29999, 'https://images.unsplash.com/photo-1523170335258-f5ed11844a49?w=500'),
 ('Designer Sunglasses', 'Classic black designer sunglasses', 14999, 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=500'),
 ('Leather Wallet', 'Premium black leather RFID wallet', 8999, 'https://images.unsplash.com/photo-1611592437281-460bfbe1220a?w=500');
-```
+\`\`\`
 
 ## Admin Dashboard Access
 

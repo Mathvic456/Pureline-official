@@ -30,10 +30,10 @@ Go to `/setup-admin` in your browser. This page will guide you through the entir
    - Go to your Supabase dashboard
    - Open the SQL Editor
    - Run this command:
-   ```sql
+   \`\`\`sql
    INSERT INTO public.admin_users (id)
    SELECT id FROM auth.users WHERE email = 'your-email@example.com'
-   ```
+   \`\`\`
    - Replace `your-email@example.com` with your actual email
 
 3. **Login:**

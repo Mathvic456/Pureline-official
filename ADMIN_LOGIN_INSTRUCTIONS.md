@@ -19,11 +19,11 @@ Visit `/auth/sign-up` and create an account:
 2. Go to **SQL Editor**
 3. Run this SQL command:
 
-```sql
+\`\`\`sql
 INSERT INTO public.admin_users (id)
 SELECT id FROM auth.users WHERE email = 'admin@example.com'
 ON CONFLICT (id) DO NOTHING;
-```
+\`\`\`
 
 Replace `admin@example.com` with the email you used in Step 2.
 
@@ -100,10 +100,10 @@ Track all payments and generate reports:
 ## Order Number Reference
 
 Each order is assigned a unique **Order Number** in format:
-```
+\`\`\`
 ORD-{timestamp}-{random}
 Example: ORD-1705123456789-9876
-```
+\`\`\`
 
 **Where:**
 - `timestamp` = Unix timestamp when order was created

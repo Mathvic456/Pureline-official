@@ -17,7 +17,7 @@ A production-ready, full-stack ecommerce platform with separate customer site an
 
 ## Directory Structure
 
-```
+\`\`\`
 apex-ecommerce/
 ├── app/
 │   ├── page.tsx                           # Homepage
@@ -64,7 +64,7 @@ Documentation:
 ├── ECOMMERCE_SETUP.md                     # Detailed setup guide
 ├── ADMIN_LOGIN_INSTRUCTIONS.md            # Admin guide
 └── PLATFORM_SUMMARY.md                    # This file
-```
+\`\`\`
 
 ## Key Features Implemented
 
