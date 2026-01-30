@@ -18,13 +18,13 @@ const playfair = Playfair_Display({
 })
 
 export const metadata: Metadata = {
-  title: "APEX | Premium Quality Products",
-  description: "Discover premium quality products at APEX. Shop our curated collection of exceptional items.",
-  keywords: ["ecommerce", "premium", "quality", "shopping"],
-  authors: [{ name: "APEX" }],
+  title: "LuxuryByEsta | Premium Quality Products",
+  description: "Discover premium quality products at LuxuryByEsta. Shop our curated collection of exceptional items.",
+  keywords: ["ecommerce", "premium", "quality", "shopping", "luxury"],
+  authors: [{ name: "LuxuryByEsta" }],
   openGraph: {
-    title: "APEX | Premium Quality Products",
-    description: "Discover premium quality products at APEX",
+    title: "LuxuryByEsta | Premium Quality Products",
+    description: "Discover premium quality products at LuxuryByEsta",
     type: "website",
   },
     generator: 'v0.app'

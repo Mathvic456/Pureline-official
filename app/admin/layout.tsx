@@ -89,7 +89,7 @@ export default function AdminLayout({
     <div className="flex h-screen bg-background text-foreground">
       {/* Sidebar */}
       <div className={`${isMobileMenuOpen ? "block" : "hidden"} md:block w-64 border-r border-border bg-secondary p-6`}>
-        <h1 className="text-2xl font-bold mb-8">APEX Admin</h1>
+        <h1 className="text-2xl font-bold mb-8">LuxuryByEsta Admin</h1>
         <nav className="space-y-2">
           {adminLinks.map((link) => (
             <Link
@@ -115,7 +115,7 @@ export default function AdminLayout({
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
         <div className="border-b border-border p-4 flex justify-between items-center md:hidden bg-secondary">
-          <h1 className="text-xl font-bold">APEX Admin</h1>
+          <h1 className="text-xl font-bold">LuxuryByEsta Admin</h1>
           <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>

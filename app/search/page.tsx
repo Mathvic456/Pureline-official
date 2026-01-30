@@ -179,7 +179,7 @@ export default function SearchPage() {
                       </div>
                       <div className="space-y-1">
                         <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                          {product.categories?.name || "APEX"}
+                          {product.categories?.name || "LuxuryByEsta"}
                         </p>
                         <h3 className="font-medium group-hover:opacity-60 transition-opacity line-clamp-1">
                           {product.name}
@@ -265,7 +265,7 @@ export default function SearchPage() {
                         </div>
                         <div className="space-y-1">
                           <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                            {product.categories?.name || "APEX"}
+                            {product.categories?.name || "LuxuryByEsta"}
                           </p>
                           <h3 className="font-medium group-hover:opacity-60 transition-opacity line-clamp-1">
                             {product.name}

@@ -86,7 +86,7 @@ export function Navbar() {
               href="/" 
               className="absolute left-1/2 -translate-x-1/2 text-2xl lg:text-3xl font-serif tracking-wider hover:opacity-60 transition-opacity"
             >
-              APEX
+              LuxuryByEsta
             </Link>
 
             {/* Right - Account & Cart */}

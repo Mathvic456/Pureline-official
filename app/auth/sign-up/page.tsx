@@ -205,7 +205,7 @@ export default function SignUpPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            APEX
+            LuxuryByEsta
           </Link>
           <h1 className="text-3xl font-light tracking-tight mt-6 mb-2">
             {step === 1 ? "Create account" : "Complete profile"}

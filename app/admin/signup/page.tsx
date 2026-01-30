@@ -102,7 +102,7 @@ export default function AdminSignupPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-            APEX
+            LuxuryByEsta
           </Link>
           <h1 className="text-3xl font-light tracking-tight mt-6 mb-2">Create Admin Account</h1>
           <p className="text-muted-foreground text-sm">Set up your admin credentials</p>
