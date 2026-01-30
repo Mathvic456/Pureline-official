@@ -22,24 +22,24 @@
 3. Create a new query
 4. Copy and paste this SQL:
 
-```sql
+\`\`\`sql
 -- Create the admin user in the auth system
 SELECT * FROM auth.admin_create_user(
   email := 'vmatthew727@gmail.com',
   password := 'computer',
   email_confirm := true
 );
-```
+\`\`\`
 
 5. Run the query, then copy the returned `id`
 6. Create another query and paste:
 
-```sql
+\`\`\`sql
 -- Make them an admin
 INSERT INTO public.admin_users (id) 
 VALUES ('PASTE_THE_ID_HERE')
 ON CONFLICT (id) DO NOTHING;
-```
+\`\`\`
 
 7. Run this query
 8. Login at `/admin/login` with your credentials
@@ -49,9 +49,9 @@ ON CONFLICT (id) DO NOTHING;
 ### Option 3: Using Setup Script
 
 1. In your terminal, run:
-```bash
+\`\`\`bash
 node scripts/create-admin.js
-```
+\`\`\`
 
 2. Make sure you have environment variables set:
    - `SUPABASE_URL`

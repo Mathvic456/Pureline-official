@@ -46,7 +46,7 @@ APEX is a full-stack ecommerce platform built with **Next.js 16** (App Router) o
 
 ### Database Schema
 
-```
+\`\`\`
 ┌─────────────────┐
 │   auth.users    │  (Supabase Auth)
 ├─────────────────┤
@@ -67,12 +67,12 @@ APEX is a full-stack ecommerce platform built with **Next.js 16** (App Router) o
     │   products    │
     │   (public)    │
     └───────────────┘
-```
+\`\`\`
 
 ### Core Tables
 
 #### **1. products** (Public Read)
-```sql
+\`\`\`sql
 CREATE TABLE products (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
@@ -86,14 +86,14 @@ CREATE TABLE products (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 **RLS Policies:**
 - ✅ Public read access (anyone can browse)
 - 🔒 Admins-only insert/update/delete
 
 #### **2. categories** (Public Read)
-```sql
+\`\`\`sql
 CREATE TABLE categories (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL UNIQUE,
@@ -102,10 +102,10 @@ CREATE TABLE categories (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 #### **3. product_images** (Multi-Image Support)
-```sql
+\`\`\`sql
 CREATE TABLE product_images (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   product_id UUID NOT NULL REFERENCES products(id),
@@ -113,12 +113,12 @@ CREATE TABLE product_images (
   display_order INTEGER DEFAULT 0, -- Sort order for gallery
   created_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 Products can have **2-4 images** stored here, displayed in gallery order.
 
 #### **4. orders** (User-Scoped)
-```sql
+\`\`\`sql
 CREATE TABLE orders (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id),
@@ -129,7 +129,7 @@ CREATE TABLE orders (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 **RLS Policies:**
 - Users see only their orders
@@ -137,7 +137,7 @@ CREATE TABLE orders (
 - Users create orders, admins can update status
 
 #### **5. order_items** (Purchase History)
-```sql
+\`\`\`sql
 CREATE TABLE order_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   order_id UUID NOT NULL REFERENCES orders(id),
@@ -146,12 +146,12 @@ CREATE TABLE order_items (
   price INTEGER NOT NULL,              -- Snapshot price at purchase
   created_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 Snapshot of prices at time of purchase (prevents price change disputes).
 
 #### **6. cart_items** (Shopping Cart)
-```sql
+\`\`\`sql
 CREATE TABLE cart_items (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id),
@@ -161,13 +161,13 @@ CREATE TABLE cart_items (
   updated_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(user_id, product_id)         -- One item per product per user
 );
-```
+\`\`\`
 
 **RLS Policies:**
 - Users only manage their own cart
 
 #### **7. user_profiles** (Customer Details)
-```sql
+\`\`\`sql
 CREATE TABLE user_profiles (
   id UUID PRIMARY KEY REFERENCES auth.users(id),
   first_name TEXT,
@@ -176,10 +176,10 @@ CREATE TABLE user_profiles (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 #### **8. user_addresses** (Multiple Addresses)
-```sql
+\`\`\`sql
 CREATE TABLE user_addresses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id),
@@ -191,17 +191,17 @@ CREATE TABLE user_addresses (
   created_at TIMESTAMP DEFAULT NOW(),
   updated_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 Users can save multiple addresses, select during checkout.
 
 #### **9. admin_users** (Admin Tracking)
-```sql
+\`\`\`sql
 CREATE TABLE admin_users (
   id UUID PRIMARY KEY REFERENCES auth.users(id),
   created_at TIMESTAMP DEFAULT NOW()
 );
-```
+\`\`\`
 
 Simple reference to track which users are admins.
 
@@ -212,27 +212,27 @@ Simple reference to track which users are admins.
 ### Three-Tier Authentication Model
 
 #### **1. Browser Client** (`lib/supabase/client.ts`)
-```typescript
+\`\`\`typescript
 createBrowserClient(PUBLIC_URL, ANON_KEY)
-```
+\`\`\`
 - Used client-side in components
 - Limited by RLS policies
 - Safe for browser environment
 - Anon key is public
 
 #### **2. Server Client** (`lib/supabase/server.ts`)
-```typescript
+\`\`\`typescript
 createServerClient(PUBLIC_URL, ANON_KEY, { cookies })
-```
+\`\`\`
 - Used in Server Actions and API routes
 - Session management via cookies
 - Respects user authentication
 - Still limited by RLS policies (extra safety layer)
 
 #### **3. Admin Client** (`lib/supabase/admin.ts`)
-```typescript
+\`\`\`typescript
 createClient(PUBLIC_URL, SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false } })
-```
+\`\`\`
 - Used for admin operations only
 - Uses service role key (elevated privileges)
 - Bypasses RLS policies
@@ -241,7 +241,7 @@ createClient(PUBLIC_URL, SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false } }
 
 ### Authentication Flow
 
-```
+\`\`\`
 1. User Signs Up at /auth/sign-up
    ↓
 2. Supabase sends confirmation email
@@ -255,13 +255,13 @@ createClient(PUBLIC_URL, SERVICE_ROLE_KEY, { auth: { autoRefreshToken: false } }
 6. Middleware refreshes session on each request
    ↓
 7. Server Actions access user via supabase.auth.getUser()
-```
+\`\`\`
 
 ### Row Level Security (RLS)
 
 Every table has RLS policies that enforce access control:
 
-```sql
+\`\`\`sql
 -- Example: Products table
 CREATE POLICY "Allow public read on products" 
   ON products FOR SELECT 
@@ -271,7 +271,7 @@ CREATE POLICY "Allow admins to insert products"
   ON products FOR INSERT
   WITH CHECK (auth.uid() IN (SELECT id FROM admin_users));
   -- Only admins can insert
-```
+\`\`\`
 
 Key principle: **Database enforces security, not just application logic.**
 
@@ -281,7 +281,7 @@ Key principle: **Database enforces security, not just application logic.**
 
 ### Request Flow
 
-```
+\`\`\`
 Browser Request
     ↓
 Next.js Request Handler
@@ -299,7 +299,7 @@ Request Routed:
 Response + Updated Cookies
     ↓
 Browser
-```
+\`\`\`
 
 ### Middleware (`proxy.ts`)
 
@@ -314,20 +314,20 @@ Runs on **every request** (except static assets):
 ### Server-Side Execution
 
 #### **1. Server Components** (Default in App Router)
-```typescript
+\`\`\`typescript
 export default async function Page() {
   const supabase = await createClient()
   const { data } = await supabase.from('products').select()
   return <div>{data.map(...)}</div>
 }
-```
+\`\`\`
 - Can access database directly
 - No client-side API call needed
 - Data hydrated server-side
 - Ideal for read-only content
 
 #### **2. Server Actions** (For Mutations)
-```typescript
+\`\`\`typescript
 'use server'
 export async function addToCart(productId) {
   const supabase = await createClient()
@@ -336,7 +336,7 @@ export async function addToCart(productId) {
     quantity: 1
   })
 }
-```
+\`\`\`
 - Called from form actions or client components
 - Secure server-side execution
 - Automatic request validation
@@ -372,7 +372,7 @@ export async function addToCart(productId) {
 #### **2. User Profile Operations**
 
 **`user-profile.ts`** - Profile Management Functions
-```typescript
+\`\`\`typescript
 // Create/update profile
 await saveUserProfile(firstName, lastName, phone, address, city, country, postal)
 
@@ -384,7 +384,7 @@ await addUserAddress(street, city, country, postal, isDefault)
 await getUserAddresses()
 await updateUserAddress(addressId, ...)
 await deleteUserAddress(addressId)
-```
+\`\`\`
 
 #### **3. E-Commerce Operations**
 
@@ -408,7 +408,7 @@ await deleteUserAddress(addressId)
 
 Handles Stripe webhook events:
 
-```
+\`\`\`
 Event: checkout.session.completed
 ├─ Extract order_id from metadata
 ├─ Update order status → "completed"
@@ -422,7 +422,7 @@ Event: charge.failed
 ├─ Extract payment_intent
 ├─ Find order by stripe_payment_id
 └─ Update order status → "cancelled"
-```
+\`\`\`
 
 **Security:**
 - Verifies webhook signature using `STRIPE_WEBHOOK_SECRET`
@@ -436,7 +436,7 @@ Event: charge.failed
 
 ### Checkout Flow
 
-```
+\`\`\`
 1. User clicks "Checkout" on cart page
    ↓
 2. Client calls createCheckoutSession(Server Action)
@@ -460,21 +460,21 @@ Event: charge.failed
 9. User redirected to /order-success
    ↓
 10. Page fetches order, displays confirmation
-```
+\`\`\`
 
 ### Multi-Currency Support
 
 Prices stored for each currency:
-```typescript
+\`\`\`typescript
 {
   price_usd: 2999,    // $29.99
   price_gbp: 2399,    // £23.99
   price_ngn: 13442399 // ₦134,423.99
 }
-```
+\`\`\`
 
 During checkout:
-```typescript
+\`\`\`typescript
 const stripeCurrencyMap = {
   USD: 'usd',
   GBP: 'gbp',
@@ -489,7 +489,7 @@ const session = await stripe.checkout.sessions.create({
     }
   }]
 })
-```
+\`\`\`
 
 ### Webhook Processing
 
@@ -497,14 +497,14 @@ Stripe posts to `https://yourdomain.com/api/webhooks/stripe` with:
 1. Webhook signature in `stripe-signature` header
 2. Event data in request body
 3. Example metadata:
-```json
+\`\`\`json
 {
   "metadata": {
     "order_id": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
     "currency": "USD"
   }
 }
-```
+\`\`\`
 
 ---
 
@@ -519,7 +519,7 @@ Stripe posts to `https://yourdomain.com/api/webhooks/stripe` with:
 - One image per category in `categories.image_url`
 
 #### **Upload Process**
-```
+\`\`\`
 1. Admin selects image file
    ↓
 2. Client calls uploadProductImage(Server Action)
@@ -536,7 +536,7 @@ Stripe posts to `https://yourdomain.com/api/webhooks/stripe` with:
 5. Admin form displays preview
    ↓
 6. On form submit, URL stored in database
-```
+\`\`\`
 
 #### **Public Access**
 - Bucket `product_images` is public
@@ -561,7 +561,7 @@ Stripe posts to `https://yourdomain.com/api/webhooks/stripe` with:
 
 ### Deployment Process
 
-```
+\`\`\`
 1. Push code to GitHub
    ↓
 2. Vercel auto-detects changes
@@ -577,11 +577,11 @@ Stripe posts to `https://yourdomain.com/api/webhooks/stripe` with:
 5. Old version retired, new version goes live
    ↓
 6. Environment variables from Vercel project config used
-```
+\`\`\`
 
 ### Build Configuration (`next.config.mjs`)
 
-```javascript
+\`\`\`javascript
 {
   typescript: {
     ignoreBuildErrors: true    // Allows TypeScript warnings
@@ -590,7 +590,7 @@ Stripe posts to `https://yourdomain.com/api/webhooks/stripe` with:
     unoptimized: true          // Disables Image optimization
   }
 }
-```
+\`\`\`
 
 ### Middleware Configuration (`proxy.ts`)
 
@@ -606,7 +606,7 @@ Middleware runs on every request:
 
 ### Required for Development & Production
 
-```bash
+\`\`\`bash
 # Supabase (Public - can be in browser)
 NEXT_PUBLIC_SUPABASE_URL=https://project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJxxx...
@@ -624,7 +624,7 @@ STRIPE_WEBHOOK_SECRET=whsec_xxx
 # Deployment
 NEXT_PUBLIC_SITE_URL=https://v0-apex-ecommerce.vercel.app
 NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=https://v0-apex-ecommerce.vercel.app
-```
+\`\`\`
 
 ### How They're Used
 
@@ -715,7 +715,7 @@ NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=https://v0-apex-ecommerce.vercel.app
 
 ### As a Customer
 
-```
+\`\`\`
 1. Sign up at /auth/sign-up
 2. Confirm email
 3. Complete profile (name, phone, address)
@@ -727,11 +727,11 @@ NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=https://v0-apex-ecommerce.vercel.app
 9. Pay with Stripe
 10. Redirected to /order-success
 11. View order in /account/orders
-```
+\`\`\`
 
 ### As an Admin
 
-```
+\`\`\`
 1. Sign up at /admin/signup
 2. Confirm email (auto-promoted to admin)
 3. Login at /admin/login
@@ -744,11 +744,11 @@ NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=https://v0-apex-ecommerce.vercel.app
 10. View pending orders
 11. Update order status to completed
 12. View payment details in /admin/payments
-```
+\`\`\`
 
 ### Payment Processing (Behind Scenes)
 
-```
+\`\`\`
 1. Checkout session created (order status = "pending")
 2. User redirected to Stripe checkout
 3. User enters card details
@@ -758,7 +758,7 @@ NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL=https://v0-apex-ecommerce.vercel.app
 7. Cart cleared (client-side on success page)
 8. Email confirmation sent to customer
 9. Order appears in admin dashboard with "completed" status
-```
+\`\`\`
 
 ---
 

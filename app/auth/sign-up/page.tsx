@@ -287,54 +287,60 @@ export default function SignUpPage() {
                 </div>
               </div>
 
-              {/* Country Selector */}
-              <div className="space-y-2">
-                <Label htmlFor="country" className="text-xs uppercase tracking-wider text-muted-foreground">
-                  Country
-                </Label>
-                <select
-                  id="country"
-                  value={selectedCountry?.code || ""}
-                  onChange={(e) => handleCountryChange(e.target.value)}
-                  required
-                  autoComplete="country"
-                  className={`w-full h-12 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus:border-foreground transition-colors text-foreground ${fieldErrors.country ? "border-destructive" : "border-border"}`}
-                >
-                  <option value="" className="bg-background text-muted-foreground">Select a country</option>
-                  {countries.map((country) => (
-                    <option key={country.code} value={country.code} className="bg-background text-foreground">
-                      {country.name}
-                    </option>
-                  ))}
-                </select>
-                {fieldErrors.country && <p className="text-xs text-destructive">{fieldErrors.country}</p>}
-              </div>
-
-              {/* Phone Number with Country Code */}
+              {/* Phone Number with Flag Country Selector */}
               <div className="space-y-2">
                 <Label htmlFor="phoneNumber" className="text-xs uppercase tracking-wider text-muted-foreground">
                   Phone Number
                 </Label>
-                <div className="flex items-center gap-2">
-                  {selectedCountry && (
-                    <div className="flex items-center h-12 px-3 border-0 border-b border-border bg-transparent text-muted-foreground whitespace-nowrap">
-                      {selectedCountry.dialCode}
+                <div className="flex items-center h-12 border-0 border-b border-border">
+                  {/* Flag Dropdown */}
+                  <div className="relative">
+                    <select
+                      id="country"
+                      value={selectedCountry?.code || ""}
+                      onChange={(e) => handleCountryChange(e.target.value)}
+                      required
+                      autoComplete="country"
+                      className="appearance-none bg-transparent h-12 pl-2 pr-8 text-2xl cursor-pointer focus:outline-none"
+                      style={{ width: selectedCountry ? "auto" : "120px" }}
+                    >
+                      <option value="" className="text-sm">Select</option>
+                      {countries.map((country) => (
+                        <option key={country.code} value={country.code} className="text-base">
+                          {country.flag} {country.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute right-1 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
                     </div>
+                  </div>
+                  
+                  {/* Country Code Display */}
+                  {selectedCountry && (
+                    <span className="text-muted-foreground whitespace-nowrap px-2 border-r border-border">
+                      {selectedCountry.dialCode}
+                    </span>
                   )}
+                  
+                  {/* Phone Input */}
                   <Input
                     id="phoneNumber"
                     type="tel"
                     inputMode="numeric"
                     pattern="[0-9]*"
-                    placeholder={selectedCountry ? `${Array.isArray(selectedCountry.phoneLength) ? selectedCountry.phoneLength[0] : selectedCountry.phoneLength} digits` : "Select country first"}
+                    placeholder={selectedCountry ? "Enter phone number" : "Select country first"}
                     required
                     disabled={!selectedCountry}
                     autoComplete="tel-national"
                     value={phoneNumber}
                     onChange={handlePhoneChange}
-                    className={`h-12 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors flex-1 ${fieldErrors.phone ? "border-destructive" : ""}`}
+                    className={`h-12 border-0 rounded-none bg-transparent focus-visible:ring-0 flex-1 ${fieldErrors.phone ? "text-destructive" : ""}`}
                   />
                 </div>
+                {fieldErrors.country && <p className="text-xs text-destructive">{fieldErrors.country}</p>}
                 {selectedCountry && (
                   <p className="text-xs text-muted-foreground">
                     {Array.isArray(selectedCountry.phoneLength) 

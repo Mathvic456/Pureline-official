@@ -22,7 +22,7 @@ You'll see several email templates available. Click on **Confirm signup** to edi
 
 #### Example Custom Email Template:
 
-```html
+\`\`\`html
 <h2>Welcome to Our Store!</h2>
 
 <p>Hi {{ .Email }},</p>
@@ -43,7 +43,7 @@ You'll see several email templates available. Click on **Confirm signup** to edi
 <p>If you didn't sign up for this account, you can safely ignore this email.</p>
 
 <p>Best regards,<br>The Store Team</p>
-```
+\`\`\`
 
 ### Step 3: Customize the Confirmation Page
 
