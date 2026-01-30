@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       if (data.user && isAdmin) {
         await supabaseAdmin
           .from("admin_users")
-          .upsert({ user_id: data.user.id }, { onConflict: "user_id" })
+          .upsert({ id: data.user.id }, { onConflict: "id" })
       }
       
       const successUrl = new URL(`${baseUrl}/auth/confirm-result`, baseUrl)

@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       if (isAdmin) {
         const { error: adminError } = await adminClient
           .from("admin_users")
-          .upsert({ user_id: user.id }, { onConflict: "user_id" })
+          .upsert({ id: user.id }, { onConflict: "id" })
 
         if (adminError) {
           console.error("[API] Admin promotion error:", adminError)
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     if (isAdmin) {
       const { error: adminError } = await adminClient
         .from("admin_users")
-        .upsert({ user_id: user.id }, { onConflict: "user_id" })
+        .upsert({ id: user.id }, { onConflict: "id" })
 
       if (adminError) {
         console.error("[API] Admin promotion error:", adminError)
