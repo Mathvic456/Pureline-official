@@ -1,7 +1,6 @@
 "use server"
 
 import { createClient } from "@/lib/supabase/server"
-import { cookies } from "next/headers"
 
 export async function signupAsAdmin(email: string, password: string) {
   try {
@@ -13,7 +12,7 @@ export async function signupAsAdmin(email: string, password: string) {
       return { error: "Password must be at least 6 characters" }
     }
 
-    const supabase = await createClient(cookies())
+    const supabase = await createClient()
 
     // Prioritize NEXT_PUBLIC_SITE_URL, then VERCEL_URL, then localhost
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 

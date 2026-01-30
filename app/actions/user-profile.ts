@@ -168,7 +168,7 @@ export async function updateUserAddress(
   postalCode: string,
   isDefault = false,
 ) {
-  const supabase = await createClient(cookies())
+  const supabase = await createClient()
   const { data: user, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user.user) {
@@ -208,7 +208,7 @@ export async function updateUserAddress(
 }
 
 export async function deleteUserAddress(addressId: string) {
-  const supabase = await createClient(cookies())
+  const supabase = await createClient()
   const { data: user, error: authError } = await supabase.auth.getUser()
 
   if (authError || !user.user) {
