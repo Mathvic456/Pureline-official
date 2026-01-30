@@ -1,280 +1,367 @@
 import { Navbar } from "@/components/navbar"
+import { Footer } from "@/components/footer"
+import { MobileNav } from "@/components/mobile-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { CategoriesCarousel } from "@/components/categories-carousel"
-import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { ArrowRight } from "lucide-react"
+import { ArrowRight, Leaf, Heart, Shield, Truck } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
+import Image from "next/image"
 
 async function getFeaturedProducts() {
   const supabase = await createClient()
-  const { data } = await supabase.from("products").select("*, product_images(image_url)").limit(6)
+  const { data } = await supabase
+    .from("products")
+    .select("*, product_images(image_url), categories(name)")
+    .limit(8)
+  return data || []
+}
+
+async function getCategories() {
+  const supabase = await createClient()
+  const { data } = await supabase.from("categories").select("*").limit(4)
   return data || []
 }
 
 export default async function Home() {
   const featuredProducts = await getFeaturedProducts()
+  const categories = await getCategories()
 
   return (
     <main className="min-h-screen bg-background text-foreground">
       <Navbar />
 
       {/* Theme Toggle */}
-      <div className="fixed bottom-8 right-8 z-40">
-        <ThemeToggle />
-      </div>
+      <ThemeToggle />
 
-      {/* Hero Section with Video Background */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
-        {/* Video Background */}
-        <div className="absolute inset-0 w-full h-full">
-          <video autoPlay muted loop className="w-full h-full object-cover" poster="/premium-background.jpg">
-            <source
-              src="https://videos.pexels.com/video-files/4534313/4534313-uhd_2560_1440_24fps.mp4"
-              type="video/mp4"
-            />
-          </video>
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-black/50" />
+      {/* Hero Section */}
+      <section className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <Image
+            src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1920&q=80"
+            alt="Hero background"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-black/40" />
         </div>
 
         {/* Hero Content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-8">
-          <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-white text-balance">
-            Discover Excellence
-          </h1>
-          <p className="text-xl md:text-2xl text-white/90 max-w-2xl mx-auto text-balance">
-            Curated products that combine premium quality with timeless design
+        <div className="relative z-10 max-w-4xl mx-auto px-4 text-center space-y-8">
+          <p className="text-sm tracking-[0.3em] uppercase text-white/80 animate-fade-down">
+            Premium Quality Products
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" className="bg-white text-black hover:bg-white/90">
-              <Link href="/search" className="flex items-center gap-2">
-                Explore Now
-                <ArrowRight size={20} />
-              </Link>
-            </Button>
-            <Button
-              asChild
-              variant="outline"
-              size="lg"
-              className="border-white text-white hover:bg-white/10 bg-transparent"
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif text-white leading-tight animate-fade-up text-balance">
+            Treat yourself like you deserve it
+          </h1>
+          <p className="text-lg md:text-xl text-white/80 max-w-xl mx-auto animate-fade-up stagger-1">
+            Discover our curated collection of exceptional products designed for the discerning customer
+          </p>
+          <div className="flex flex-wrap justify-center gap-4 pt-4 animate-fade-up stagger-2">
+            <Link 
+              href="/categories"
+              className="px-8 py-4 bg-white text-black text-sm tracking-wider uppercase hover:bg-white/90 transition-colors"
             >
-              <Link href="/categories">View Categories</Link>
-            </Button>
+              Shop Now
+            </Link>
+            <Link 
+              href="/collections"
+              className="px-8 py-4 border border-white text-white text-sm tracking-wider uppercase hover:bg-white/10 transition-colors"
+            >
+              View Collections
+            </Link>
+          </div>
+        </div>
+
+        {/* Scroll indicator */}
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-float">
+          <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center pt-2">
+            <div className="w-1 h-2 bg-white/50 rounded-full" />
           </div>
         </div>
       </section>
 
-      {/* Categories Section */}
-      <section className="py-20 md:py-32 bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-4">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-balance">Shop by Category</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-balance">
-              Explore our carefully curated collections
-            </p>
-          </div>
-          <CategoriesCarousel />
-          <div className="flex justify-center">
-            <Button asChild variant="outline" size="lg">
-              <Link href="/categories">View All Categories</Link>
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Products Section */}
-      <section className="py-20 md:py-32 bg-secondary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-4">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-balance">Featured Products</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-balance">
-              Hand-picked selections from our premium collection
+      {/* Shop by Category */}
+      <section className="py-20 lg:py-32">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif mb-4">Shop by Category</h2>
+            <p className="text-muted-foreground max-w-lg mx-auto">
+              Select a category and choose your product accordingly
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProducts.map((product) => {
-              const firstImage = product.product_images?.[0]?.image_url || "/placeholder.svg"
-              return (
-                <Link key={product.id} href={`/products/${product.id}`} className="group cursor-pointer">
-                  <div className="relative h-80 bg-muted rounded-lg overflow-hidden mb-4">
-                    <img
-                      src={firstImage || "/placeholder.svg"}
-                      alt={product.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-semibold group-hover:text-muted-foreground transition">
-                      {product.name}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            {categories.length > 0 ? (
+              categories.map((category, index) => (
+                <Link 
+                  key={category.id} 
+                  href={`/categories/${category.id}`}
+                  className="group relative aspect-[3/4] overflow-hidden img-zoom"
+                >
+                  <Image
+                    src={category.image_url || `https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=600&q=80`}
+                    alt={category.name}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-4">
+                    <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-center tracking-wider uppercase">
+                      {category.name}
                     </h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">{product.description}</p>
-                    <div className="flex justify-between items-center pt-2">
-                      <span className="font-bold">
-                        ${product.price_usd ? (product.price_usd / 100).toFixed(2) : "0.00"}
-                      </span>
-                      <span className="text-primary">View</span>
-                    </div>
+                    <span className="mt-2 text-xs tracking-wider opacity-0 group-hover:opacity-100 transition-opacity uppercase">
+                      Shop Now
+                    </span>
                   </div>
                 </Link>
-              )
-            })}
+              ))
+            ) : (
+              <>
+                {["New Arrivals", "Best Sellers", "Featured", "Collections"].map((name, index) => (
+                  <Link 
+                    key={name} 
+                    href="/categories"
+                    className="group relative aspect-[3/4] overflow-hidden img-zoom"
+                  >
+                    <Image
+                      src={`https://images.unsplash.com/photo-${index === 0 ? "1441986300917-64674bd600d8" : index === 1 ? "1472851294608-062f824d29cc" : index === 2 ? "1560472354-b33ff0c44a43" : "1556905055-8f358a7a47b2"}?w=600&q=80`}
+                      alt={name}
+                      fill
+                      className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors" />
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-4">
+                      <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-center tracking-wider uppercase">
+                        {name}
+                      </h3>
+                      <span className="mt-2 text-xs tracking-wider opacity-0 group-hover:opacity-100 transition-opacity uppercase">
+                        Shop Now
+                      </span>
+                    </div>
+                  </Link>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Featured Products */}
+      <section className="py-20 lg:py-32 bg-secondary">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-12">
+            <div>
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif mb-4">Featured Products</h2>
+              <p className="text-muted-foreground max-w-lg">
+                Hand-picked selections from our premium collection
+              </p>
+            </div>
+            <Link 
+              href="/categories"
+              className="inline-flex items-center gap-2 text-sm tracking-wider uppercase mt-4 md:mt-0 hover:opacity-60 transition-opacity"
+            >
+              View All
+              <ArrowRight size={16} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            {featuredProducts.length > 0 ? (
+              featuredProducts.map((product) => {
+                const firstImage = product.product_images?.[0]?.image_url
+                return (
+                  <Link key={product.id} href={`/products/${product.id}`} className="group">
+                    <div className="relative aspect-[3/4] overflow-hidden mb-4 bg-muted img-zoom">
+                      <Image
+                        src={firstImage || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80"}
+                        alt={product.name}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                        {product.categories?.name || "APEX"}
+                      </p>
+                      <h3 className="font-medium group-hover:opacity-60 transition-opacity line-clamp-1">
+                        {product.name}
+                      </h3>
+                      <p className="text-sm">
+                        ${product.price_usd ? (product.price_usd / 100).toFixed(2) : "0.00"}
+                      </p>
+                    </div>
+                  </Link>
+                )
+              })
+            ) : (
+              <p className="col-span-full text-center text-muted-foreground py-12">
+                No products available yet. Check back soon!
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* Brand Values */}
+      <section className="py-20 lg:py-32">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif mb-4">Why Choose APEX</h2>
+            <p className="text-muted-foreground max-w-lg mx-auto">
+              We believe in quality, sustainability, and exceptional customer service
+            </p>
+          </div>
+
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12">
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center border border-border">
+                <Leaf size={28} strokeWidth={1.5} />
+              </div>
+              <h3 className="font-serif text-lg mb-2">Premium Quality</h3>
+              <p className="text-sm text-muted-foreground">
+                Every product is carefully selected for exceptional quality
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center border border-border">
+                <Heart size={28} strokeWidth={1.5} />
+              </div>
+              <h3 className="font-serif text-lg mb-2">Made with Care</h3>
+              <p className="text-sm text-muted-foreground">
+                Crafted by artisans who take pride in their work
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center border border-border">
+                <Truck size={28} strokeWidth={1.5} />
+              </div>
+              <h3 className="font-serif text-lg mb-2">Fast Shipping</h3>
+              <p className="text-sm text-muted-foreground">
+                Free shipping on orders over $50
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center border border-border">
+                <Shield size={28} strokeWidth={1.5} />
+              </div>
+              <h3 className="font-serif text-lg mb-2">Secure Checkout</h3>
+              <p className="text-sm text-muted-foreground">
+                Safe and secure payment processing with Stripe
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* About Section */}
-      <section className="py-20 md:py-32 bg-background">
+      <section className="py-20 lg:py-32 bg-secondary">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6">
-              <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-balance">About APEX</h2>
-              <p className="text-lg text-muted-foreground text-balance">
-                We believe that exceptional design and quality craftsmanship should be accessible to everyone. Our
-                mission is to curate and deliver the finest products that elevate your lifestyle.
-              </p>
-              <p className="text-lg text-muted-foreground text-balance">
-                Every product in our collection is carefully selected for its quality, design, and durability. We
-                partner with trusted artisans and manufacturers who share our commitment to excellence.
-              </p>
-              <Button asChild size="lg">
-                <Link href="/search">Start Shopping</Link>
-              </Button>
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+            <div className="relative aspect-[4/5] overflow-hidden img-zoom">
+              <Image
+                src="https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=800&q=80"
+                alt="About APEX"
+                fill
+                className="object-cover"
+              />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-secondary rounded-lg p-8 space-y-4">
-                <h3 className="text-2xl font-bold">Premium</h3>
-                <p className="text-muted-foreground">Hand-selected products of exceptional quality</p>
+            <div className="space-y-6">
+              <p className="text-sm tracking-[0.2em] uppercase text-muted-foreground">About Us</p>
+              <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif">The APEX Story</h2>
+              <div className="space-y-4 text-muted-foreground">
+                <p>
+                  APEX was founded with a simple mission: to bring exceptional quality products 
+                  to discerning customers who appreciate the finer things in life.
+                </p>
+                <p>
+                  We believe that quality should never be compromised. Every product in our 
+                  collection is carefully selected and vetted to ensure it meets our high standards.
+                </p>
+                <p>
+                  Our commitment to excellence extends beyond our products to our customer service. 
+                  We're here to help you find exactly what you're looking for.
+                </p>
               </div>
-              <div className="bg-secondary rounded-lg p-8 space-y-4">
-                <h3 className="text-2xl font-bold">Global</h3>
-                <p className="text-muted-foreground">Curated from artisans and makers worldwide</p>
-              </div>
-              <div className="bg-secondary rounded-lg p-8 space-y-4">
-                <h3 className="text-2xl font-bold">Secure</h3>
-                <p className="text-muted-foreground">Safe checkout with Stripe payment processing</p>
-              </div>
-              <div className="bg-secondary rounded-lg p-8 space-y-4">
-                <h3 className="text-2xl font-bold">Support</h3>
-                <p className="text-muted-foreground">Dedicated customer service & support</p>
-              </div>
+              <Link 
+                href="/categories"
+                className="inline-flex items-center gap-2 text-sm tracking-wider uppercase hover:opacity-60 transition-opacity"
+              >
+                Discover Our Collection
+                <ArrowRight size={16} />
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* What We Offer Section */}
-      <section className="py-20 md:py-32 bg-secondary">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-          <div className="text-center space-y-4">
-            <h2 className="text-4xl md:text-5xl font-bold tracking-tight text-balance">What We Offer</h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto text-balance">
-              Experience a new standard of online shopping
+      {/* FAQ Section */}
+      <section className="py-20 lg:py-32">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif mb-4">FAQs</h2>
+            <p className="text-muted-foreground">
+              Frequently Asked Questions
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold">Curated Selection</h3>
-              <p className="text-muted-foreground">
-                Our team meticulously selects each product to ensure it meets our high standards for quality and design.
-              </p>
-            </div>
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold">Multi-Currency</h3>
-              <p className="text-muted-foreground">
-                Shop in your preferred currency with support for USD, GBP, and EUR. Real-time currency conversion
-                available.
-              </p>
-            </div>
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold">Secure Payment</h3>
-              <p className="text-muted-foreground">
-                Industry-leading security with Stripe payment processing. Your data is always safe and protected.
-              </p>
-            </div>
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold">Category Discovery</h3>
-              <p className="text-muted-foreground">
-                Browse by carefully organized categories to find exactly what you're looking for.
-              </p>
-            </div>
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold">User Accounts</h3>
-              <p className="text-muted-foreground">
-                Create an account to track orders, manage your cart, and enjoy a personalized shopping experience.
-              </p>
-            </div>
-            <div className="space-y-4">
-              <h3 className="text-2xl font-bold">Premium Support</h3>
-              <p className="text-muted-foreground">
-                Our dedicated support team is here to help with any questions or concerns about your purchase.
-              </p>
-            </div>
+          <div className="divide-y divide-border">
+            {[
+              {
+                q: "What is your return policy?",
+                a: "We offer a 30-day return policy for all unused items in their original packaging. Simply contact our support team to initiate a return."
+              },
+              {
+                q: "How long does shipping take?",
+                a: "Standard shipping takes 5-7 business days. Express shipping is available for 2-3 business day delivery."
+              },
+              {
+                q: "Do you ship internationally?",
+                a: "Yes! We ship to most countries worldwide. International shipping typically takes 10-14 business days."
+              },
+              {
+                q: "How can I track my order?",
+                a: "Once your order ships, you'll receive a tracking number via email. You can also track your order in your account dashboard."
+              },
+              {
+                q: "What payment methods do you accept?",
+                a: "We accept all major credit cards, PayPal, and Apple Pay through our secure Stripe payment processing."
+              }
+            ].map((faq, index) => (
+              <details key={index} className="group py-6">
+                <summary className="flex justify-between items-center cursor-pointer list-none">
+                  <h3 className="font-medium pr-4">{faq.q}</h3>
+                  <span className="text-2xl font-light group-open:rotate-45 transition-transform">+</span>
+                </summary>
+                <p className="mt-4 text-muted-foreground pr-8">{faq.a}</p>
+              </details>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-border py-12 bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-8">
-            <div>
-              <h4 className="font-bold mb-4 text-lg">APEX</h4>
-              <p className="text-sm text-muted-foreground">Premium ecommerce for discerning customers.</p>
-            </div>
-            <div>
-              <h5 className="font-semibold mb-4 text-sm">Shop</h5>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <Link href="/search" className="hover:text-foreground transition">
-                    All Products
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/categories" className="hover:text-foreground transition">
-                    Categories
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-semibold mb-4 text-sm">Account</h5>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <Link href="/auth/login" className="hover:text-foreground transition">
-                    Login
-                  </Link>
-                </li>
-                <li>
-                  <Link href="/auth/sign-up" className="hover:text-foreground transition">
-                    Sign Up
-                  </Link>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h5 className="font-semibold mb-4 text-sm">Support</h5>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li>
-                  <a href="#" className="hover:text-foreground transition">
-                    Contact
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-foreground transition">
-                    FAQ
-                  </a>
-                </li>
-              </ul>
-            </div>
-          </div>
-          <div className="border-t border-border pt-8 text-center text-sm text-muted-foreground">
-            <p>&copy; 2026 APEX. All rights reserved.</p>
-          </div>
+      {/* CTA Section */}
+      <section className="py-20 lg:py-32 bg-primary text-primary-foreground">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif mb-6">Ready to Discover?</h2>
+          <p className="text-primary-foreground/70 max-w-lg mx-auto mb-8">
+            Join thousands of satisfied customers who have elevated their lifestyle with APEX products.
+          </p>
+          <Link 
+            href="/categories"
+            className="inline-block px-8 py-4 bg-primary-foreground text-primary text-sm tracking-wider uppercase hover:opacity-90 transition-opacity"
+          >
+            Start Shopping
+          </Link>
         </div>
-      </footer>
+      </section>
+
+      <Footer />
+      <MobileNav />
+
+      {/* Spacer for mobile nav */}
+      <div className="h-16 lg:hidden" />
     </main>
   )
 }
