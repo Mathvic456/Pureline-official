@@ -51,9 +51,28 @@ export async function GET(request: NextRequest) {
       
       // Success - promote to admin if needed
       if (data.user && isAdmin) {
-        await supabaseAdmin
+        console.log("[v0] Promoting user to admin:", data.user.id)
+        
+        // Check if already admin first
+        const { data: existingAdmin } = await supabaseAdmin
           .from("admin_users")
-          .upsert({ id: data.user.id }, { onConflict: "id" })
+          .select("id")
+          .eq("id", data.user.id)
+          .maybeSingle()
+        
+        if (!existingAdmin) {
+          const { error: insertError } = await supabaseAdmin
+            .from("admin_users")
+            .insert({ id: data.user.id })
+          
+          if (insertError) {
+            console.error("[v0] Failed to insert admin:", insertError)
+          } else {
+            console.log("[v0] Admin inserted successfully")
+          }
+        } else {
+          console.log("[v0] User already an admin")
+        }
       }
       
       const successUrl = new URL(`${baseUrl}/auth/confirm-result`, baseUrl)

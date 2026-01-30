@@ -76,16 +76,50 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
+    // Helper function to add user to admin_users table
+    const promoteToAdmin = async (userId: string) => {
+      console.log("[v0] Attempting to promote user to admin:", userId)
+      
+      // First check if already an admin
+      const { data: existingAdmin, error: checkError } = await adminClient
+        .from("admin_users")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle()
+      
+      if (checkError) {
+        console.log("[v0] Error checking existing admin:", checkError)
+      }
+      
+      if (existingAdmin) {
+        console.log("[v0] User is already an admin")
+        return { success: true, alreadyAdmin: true }
+      }
+      
+      // Insert into admin_users
+      const { data: insertData, error: insertError } = await adminClient
+        .from("admin_users")
+        .insert({ id: userId })
+        .select()
+      
+      if (insertError) {
+        console.error("[v0] Admin insert error:", insertError)
+        return { success: false, error: insertError }
+      }
+      
+      console.log("[v0] Successfully added to admin_users:", insertData)
+      return { success: true, data: insertData }
+    }
+
     // Check if user is already confirmed
     if (user.email_confirmed_at) {
+      console.log("[v0] User already confirmed, email:", email)
+      
       // User is already confirmed - if admin signup, promote them
       if (isAdmin) {
-        const { error: adminError } = await adminClient
-          .from("admin_users")
-          .upsert({ id: user.id }, { onConflict: "id" })
-
-        if (adminError) {
-          console.error("[API] Admin promotion error:", adminError)
+        const result = await promoteToAdmin(user.id)
+        if (!result.success) {
+          console.error("[v0] Failed to promote existing user to admin")
         }
       }
 
@@ -97,23 +131,23 @@ export async function POST(request: NextRequest) {
     }
 
     // Manually confirm the user's email using admin client
+    console.log("[v0] Confirming user email for:", user.id)
     const { data: updatedUser, error: updateError } = await adminClient.auth.admin.updateUserById(user.id, {
       email_confirm: true,
     })
 
     if (updateError) {
-      console.error("[API] Update user error:", updateError)
+      console.error("[v0] Update user error:", updateError)
       return NextResponse.json({ error: "Unable to confirm email" }, { status: 500 })
     }
 
+    console.log("[v0] User email confirmed successfully")
+
     // If admin signup, promote to admin
     if (isAdmin) {
-      const { error: adminError } = await adminClient
-        .from("admin_users")
-        .upsert({ id: user.id }, { onConflict: "id" })
-
-      if (adminError) {
-        console.error("[API] Admin promotion error:", adminError)
+      const result = await promoteToAdmin(user.id)
+      if (!result.success) {
+        console.error("[v0] Failed to promote to admin after confirmation")
       }
     }
 
