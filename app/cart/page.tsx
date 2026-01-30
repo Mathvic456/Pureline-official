@@ -1,18 +1,29 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Navbar } from "@/components/navbar"
-import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import type { CartItem, Product } from "@/lib/products"
-import { Trash2, Minus, Plus } from "lucide-react"
-import { useRouter } from "next/navigation"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
+import Image from "next/image"
+import { Navbar } from "@/components/navbar"
+import { Footer } from "@/components/footer"
+import { MobileNav } from "@/components/mobile-nav"
+import { createClient } from "@/lib/supabase/client"
+import type { CartItem, Product } from "@/lib/products"
+import { Trash2, Minus, Plus, ArrowRight, ShoppingBag, Lock } from "lucide-react"
+import { useRouter } from "next/navigation"
 import { formatPrice, type Currency, getCurrencyFromStorage, getPriceForCurrency } from "@/lib/currency"
 
+interface ProductImage {
+  id: string
+  image_url: string
+  display_order: number
+}
+
+interface ProductWithImages extends Product {
+  product_images?: ProductImage[]
+}
+
 export default function CartPage() {
-  const [cartItems, setCartItems] = useState<(CartItem & { product?: Product })[]>([])
+  const [cartItems, setCartItems] = useState<(CartItem & { products?: ProductWithImages })[]>([])
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [currency, setCurrency] = useState<Currency>("USD")
@@ -32,17 +43,15 @@ export default function CartPage() {
 
       const { data: items } = await supabase
         .from("cart_items")
-        .select(
-          `
+        .select(`
           id,
           user_id,
           product_id,
           quantity,
           created_at,
           updated_at,
-          products:product_id (*)
-        `,
-        )
+          products:product_id (*, product_images(*))
+        `)
         .eq("user_id", data.user.id)
 
       setCartItems(items || [])
@@ -81,12 +90,24 @@ export default function CartPage() {
     return sum + price * item.quantity
   }, 0)
 
+  const itemCount = cartItems.reduce((sum, item) => sum + item.quantity, 0)
+
   if (loading) {
     return (
       <main className="min-h-screen bg-background text-foreground">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <p>Loading cart...</p>
+          <div className="animate-pulse space-y-4">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="flex gap-6 p-6 border border-border">
+                <div className="w-24 h-32 bg-muted" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-32 bg-muted" />
+                  <div className="h-6 w-48 bg-muted" />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </main>
     )
@@ -96,108 +117,171 @@ export default function CartPage() {
     <main className="min-h-screen bg-background text-foreground">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-4xl font-bold mb-12">Shopping Cart</h1>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-16">
+        {/* Page Header */}
+        <div className="flex items-center justify-between mb-8 lg:mb-12">
+          <h1 className="text-3xl lg:text-4xl font-serif">Shopping Cart</h1>
+          {cartItems.length > 0 && (
+            <p className="text-muted-foreground">
+              {itemCount} item{itemCount !== 1 ? "s" : ""}
+            </p>
+          )}
+        </div>
 
         {cartItems.length === 0 ? (
-          <Card>
-            <CardHeader>
-              <CardTitle>Your cart is empty</CardTitle>
-              <CardDescription>Start shopping to add items to your cart</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button asChild>
-                <Link href="/search">Continue Shopping</Link>
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="text-center py-20">
+            <div className="w-20 h-20 mx-auto mb-6 flex items-center justify-center border border-border">
+              <ShoppingBag size={32} strokeWidth={1.5} />
+            </div>
+            <h2 className="text-2xl font-serif mb-4">Your cart is empty</h2>
+            <p className="text-muted-foreground mb-8">
+              Looks like you haven't added anything to your cart yet
+            </p>
+            <Link
+              href="/categories"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-primary text-primary-foreground text-sm tracking-wider uppercase"
+            >
+              Start Shopping
+              <ArrowRight size={16} />
+            </Link>
+          </div>
         ) : (
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
             {/* Cart Items */}
-            <div className="lg:col-span-2 space-y-4">
-              {cartItems.map((item) => {
-                const price = getPriceForCurrency(item.products || {}, currency) || 0
-                return (
-                  <div
-                    key={item.id}
-                    className="border border-border rounded-lg p-6 flex gap-6 hover:shadow-lg transition"
-                  >
-                    {item.products?.imageUrl && (
-                      <div className="w-24 h-24 bg-muted rounded overflow-hidden flex-shrink-0">
-                        <img
-                          src={item.products.imageUrl || "/placeholder.svg"}
-                          alt={item.products.name}
-                          className="w-full h-full object-cover"
+            <div className="lg:col-span-2">
+              <div className="border-t border-border">
+                {cartItems.map((item) => {
+                  const price = getPriceForCurrency(item.products || {}, currency) || 0
+                  const firstImage = item.products?.product_images?.[0]?.image_url
+                  return (
+                    <div key={item.id} className="flex gap-4 lg:gap-6 py-6 border-b border-border">
+                      {/* Product Image */}
+                      <Link 
+                        href={`/products/${item.product_id}`}
+                        className="relative w-24 h-32 lg:w-32 lg:h-40 flex-shrink-0 bg-secondary overflow-hidden"
+                      >
+                        <Image
+                          src={firstImage || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&q=80"}
+                          alt={item.products?.name || "Product"}
+                          fill
+                          className="object-cover"
                         />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-lg">{item.products?.name}</h3>
-                      <p className="text-sm text-muted-foreground mb-4">{formatPrice(price, currency)} each</p>
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 border border-border rounded">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                      </Link>
+
+                      {/* Product Details */}
+                      <div className="flex-1 flex flex-col justify-between py-1">
+                        <div>
+                          <Link 
+                            href={`/products/${item.product_id}`}
+                            className="font-medium hover:opacity-60 transition-opacity"
                           >
-                            <Minus size={16} />
-                          </Button>
-                          <span className="w-8 text-center">{item.quantity}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                          >
-                            <Plus size={16} />
-                          </Button>
+                            {item.products?.name}
+                          </Link>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {formatPrice(price, currency)}
+                          </p>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveItem(item.id)}
-                          className="text-destructive"
-                        >
-                          <Trash2 size={16} />
-                        </Button>
+
+                        <div className="flex items-center justify-between">
+                          {/* Quantity Controls */}
+                          <div className="flex items-center border border-border">
+                            <button
+                              onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
+                              className="w-8 h-8 flex items-center justify-center hover:bg-secondary transition-colors"
+                              aria-label="Decrease quantity"
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <span className="w-10 h-8 flex items-center justify-center text-sm border-x border-border">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
+                              className="w-8 h-8 flex items-center justify-center hover:bg-secondary transition-colors"
+                              aria-label="Increase quantity"
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
+
+                          {/* Remove Button */}
+                          <button
+                            onClick={() => handleRemoveItem(item.id)}
+                            className="text-muted-foreground hover:text-foreground transition-colors"
+                            aria-label="Remove item"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Item Total - Desktop */}
+                      <div className="hidden lg:block text-right w-24">
+                        <p className="font-medium">{formatPrice(price * item.quantity, currency)}</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-lg">{formatPrice(price * item.quantity, currency)}</p>
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
+
+              {/* Continue Shopping */}
+              <Link
+                href="/categories"
+                className="inline-flex items-center gap-2 mt-8 text-sm hover:opacity-60 transition-opacity"
+              >
+                <ArrowRight size={16} className="rotate-180" />
+                Continue Shopping
+              </Link>
             </div>
 
             {/* Order Summary */}
-            <div>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Order Summary</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex justify-between">
+            <div className="lg:sticky lg:top-40 lg:self-start">
+              <div className="bg-secondary p-6 lg:p-8">
+                <h2 className="text-lg font-serif mb-6">Order Summary</h2>
+                
+                <div className="space-y-4 pb-6 border-b border-border">
+                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Subtotal</span>
                     <span>{formatPrice(totalAmount, currency)}</span>
                   </div>
-                  <div className="flex justify-between">
+                  <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Shipping</span>
-                    <span>Free</span>
+                    <span>{totalAmount >= 5000 ? "Free" : "Calculated at checkout"}</span>
                   </div>
-                  <div className="border-t border-border pt-4 flex justify-between text-lg font-semibold">
-                    <span>Total</span>
-                    <span>{formatPrice(totalAmount, currency)}</span>
-                  </div>
-                  <Button asChild className="w-full">
-                    <Link href="/checkout">Proceed to Checkout</Link>
-                  </Button>
-                </CardContent>
-              </Card>
+                </div>
+
+                <div className="flex justify-between py-6 border-b border-border">
+                  <span className="font-medium">Estimated Total</span>
+                  <span className="font-medium text-lg">{formatPrice(totalAmount, currency)}</span>
+                </div>
+
+                <Link
+                  href="/checkout"
+                  className="flex items-center justify-center gap-2 w-full py-4 mt-6 bg-primary text-primary-foreground text-sm tracking-wider uppercase hover:opacity-90 transition-opacity"
+                >
+                  Checkout
+                  <ArrowRight size={16} />
+                </Link>
+
+                <div className="flex items-center justify-center gap-2 mt-4 text-xs text-muted-foreground">
+                  <Lock size={12} />
+                  Secure checkout powered by Stripe
+                </div>
+
+                {totalAmount < 5000 && (
+                  <p className="mt-6 text-xs text-center text-muted-foreground">
+                    Free shipping on orders over {formatPrice(5000, currency)}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         )}
       </div>
+
+      <Footer />
+      <MobileNav />
+      <div className="h-16 lg:hidden" />
     </main>
   )
 }
