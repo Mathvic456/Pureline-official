@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
-import { signupAsAdmin } from "@/app/actions/admin-signup"
+import { createClient } from "@/lib/supabase/client"
 import { validateSignupForm } from "@/lib/validation"
 
 export default function AdminSignupPage() {
@@ -16,6 +16,8 @@ export default function AdminSignupPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isLoading, setIsLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  
+  const supabase = createClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -35,13 +37,35 @@ export default function AdminSignupPage() {
     setIsLoading(true)
 
     try {
-      const result = await signupAsAdmin(email, password)
+      // Use client-side Supabase to ensure PKCE code verifier is stored in browser
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
+      
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${siteUrl}/auth/confirm?admin=true`,
+        },
+      })
 
-      if (result.error) {
-        setFieldErrors({ form: result.error })
-      } else {
-        setShowSuccess(true)
+      if (error) {
+        setFieldErrors({ form: error.message })
+        return
       }
+      
+      if (!data.user) {
+        setFieldErrors({ form: "Failed to create user" })
+        return
+      }
+
+      // Check if email confirmation is disabled (user gets session immediately)
+      if (data.session) {
+        // User is already logged in, redirect to admin dashboard
+        window.location.href = "/admin/dashboard"
+        return
+      }
+      
+      setShowSuccess(true)
     } catch (err) {
       setFieldErrors({ form: err instanceof Error ? err.message : "An error occurred" })
     } finally {
