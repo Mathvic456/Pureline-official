@@ -278,6 +278,8 @@ export function ConfirmContent() {
       "Email link is invalid or has expired": "This link has expired or has already been used. If you already confirmed, try signing in.",
       "otp_expired": "This confirmation link has expired. Please sign up again.",
       "access_denied": "Access was denied. Please try signing up again.",
+      "PKCE": "The confirmation link was opened in a different browser than where you signed up. Please try signing in - if your email was confirmed, you should be able to log in. Otherwise, sign up again using the same browser to click the confirmation link.",
+      "code verifier": "The confirmation link was opened in a different browser than where you signed up. Please try signing in - if your email was confirmed, you should be able to log in. Otherwise, sign up again using the same browser to click the confirmation link.",
     }
     
     for (const [key, value] of Object.entries(errorMap)) {
