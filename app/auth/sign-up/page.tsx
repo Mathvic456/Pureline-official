@@ -85,14 +85,31 @@ export default function SignUpPage() {
       // Use production site URL, fallback to window.location.origin for local dev
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin
       
-      const { error } = await supabase.auth.signUp({
+      console.log("[v0] SignUp - Using redirect URL:", `${siteUrl}/auth/confirm`)
+      
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: `${siteUrl}/auth/confirm`,
         },
       })
-      if (error) throw error
+      
+      if (error) {
+        console.log("[v0] SignUp Error:", error.message)
+        throw error
+      }
+      
+      console.log("[v0] SignUp Success - user:", data.user?.id, "session:", !!data.session)
+      
+      // Check if email confirmation is disabled (user gets session immediately)
+      if (data.session) {
+        console.log("[v0] User confirmed immediately (email confirmation disabled)")
+        // User is already logged in, redirect to account
+        window.location.href = "/account"
+        return
+      }
+      
       setStep(2)
     } catch (error: unknown) {
       setFieldErrors({ form: error instanceof Error ? error.message : "An error occurred" })
