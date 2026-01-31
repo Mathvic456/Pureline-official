@@ -9,15 +9,37 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { saveUserProfile } from "@/app/actions/user-profile"
 import { createClient } from "@/lib/supabase/client"
+import { countries, type CountryData, validatePhoneForCountry, formatPhoneWithCountryCode, parsePhoneNumber } from "@/lib/countries"
+import { CountryFlagSelector } from "@/components/country-flag-selector"
 
-export function ProfileEditor({ initialProfile, onUpdate }: { initialProfile?: any; onUpdate?: () => void }) {
+interface ProfileEditorProps {
+  initialProfile?: {
+    first_name?: string
+    last_name?: string
+    phone_number?: string
+  } | null
+  onUpdate?: (profile: any) => void
+}
+
+export function ProfileEditor({ initialProfile, onUpdate }: ProfileEditorProps) {
   const [email, setEmail] = useState("")
   const [firstName, setFirstName] = useState(initialProfile?.first_name || "")
   const [lastName, setLastName] = useState(initialProfile?.last_name || "")
-  const [phoneNumber, setPhoneNumber] = useState(initialProfile?.phone_number || "")
+  const [phoneNumber, setPhoneNumber] = useState("")
+  const [selectedCountry, setSelectedCountry] = useState<CountryData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [phoneError, setPhoneError] = useState("")
   const supabase = createClient()
+
+  // Parse existing phone number to extract country and local number
+  useEffect(() => {
+    if (initialProfile?.phone_number) {
+      const { country, localNumber } = parsePhoneNumber(initialProfile.phone_number)
+      setSelectedCountry(country)
+      setPhoneNumber(localNumber)
+    }
+  }, [initialProfile])
 
   useEffect(() => {
     const fetchEmail = async () => {
@@ -29,15 +51,55 @@ export function ProfileEditor({ initialProfile, onUpdate }: { initialProfile?: a
     fetchEmail()
   }, [supabase])
 
+  // Handle country change
+  const handleCountryChange = (countryCode: string) => {
+    const country = countries.find(c => c.code === countryCode)
+    setSelectedCountry(country || null)
+    setPhoneNumber("")
+    setPhoneError("")
+  }
+
+  // Handle phone input
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    const digitsOnly = value.replace(/\D/g, "")
+    
+    if (selectedCountry) {
+      const maxLength = Array.isArray(selectedCountry.phoneLength) 
+        ? selectedCountry.phoneLength[1] 
+        : selectedCountry.phoneLength
+      setPhoneNumber(digitsOnly.slice(0, maxLength))
+    } else {
+      setPhoneNumber(digitsOnly.slice(0, 15))
+    }
+    setPhoneError("")
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setMessage(null)
+    setPhoneError("")
+
+    // Validate phone if country is selected
+    if (selectedCountry && phoneNumber) {
+      const error = validatePhoneForCountry(phoneNumber, selectedCountry.code)
+      if (error) {
+        setPhoneError(error)
+        return
+      }
+    }
+
     setIsLoading(true)
 
     try {
-      await saveUserProfile(firstName, lastName, phoneNumber)
+      // Format phone with country code
+      const fullPhoneNumber = selectedCountry 
+        ? formatPhoneWithCountryCode(phoneNumber, selectedCountry.dialCode)
+        : phoneNumber
+
+      await saveUserProfile(firstName, lastName, fullPhoneNumber)
       setMessage({ type: "success", text: "Profile updated successfully!" })
-      onUpdate?.()
+      onUpdate?.({ first_name: firstName, last_name: lastName, phone_number: fullPhoneNumber })
     } catch (error) {
       setMessage({
         type: "error",
@@ -94,14 +156,43 @@ export function ProfileEditor({ initialProfile, onUpdate }: { initialProfile?: a
 
             <div className="grid gap-2">
               <Label htmlFor="phoneNumber">Phone Number</Label>
-              <Input
-                id="phoneNumber"
-                type="tel"
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                placeholder="+1 (555) 000-0000"
-                required
-              />
+              <div className="flex items-center h-10 border border-input rounded-md overflow-hidden">
+                {/* Flag Dropdown */}
+                <CountryFlagSelector
+                  countries={countries}
+                  selectedCountry={selectedCountry}
+                  onSelect={handleCountryChange}
+                />
+                
+                {/* Country Code Display */}
+                {selectedCountry && (
+                  <span className="text-muted-foreground whitespace-nowrap px-2 border-r border-input text-sm">
+                    {selectedCountry.dialCode}
+                  </span>
+                )}
+                
+                {/* Phone Input */}
+                <Input
+                  id="phoneNumber"
+                  type="tel"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder={selectedCountry ? "Enter phone number" : "Select country first"}
+                  disabled={!selectedCountry}
+                  value={phoneNumber}
+                  onChange={handlePhoneChange}
+                  className="h-full border-0 rounded-none focus-visible:ring-0 flex-1"
+                />
+              </div>
+              {selectedCountry && (
+                <p className="text-xs text-muted-foreground">
+                  {Array.isArray(selectedCountry.phoneLength) 
+                    ? `${selectedCountry.phoneLength[0]}-${selectedCountry.phoneLength[1]} digits required`
+                    : `${selectedCountry.phoneLength} digits required`}
+                  {phoneNumber && ` (${phoneNumber.length} entered)`}
+                </p>
+              )}
+              {phoneError && <p className="text-xs text-destructive">{phoneError}</p>}
             </div>
 
             <Button type="submit" disabled={isLoading}>

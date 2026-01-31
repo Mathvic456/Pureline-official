@@ -97,3 +97,21 @@ export function formatPhoneWithCountryCode(phone: string, dialCode: string): str
   const digitsOnly = phone.replace(/\D/g, "")
   return `${dialCode}${digitsOnly}`
 }
+
+export function parsePhoneNumber(fullPhone: string): { country: CountryData | null; localNumber: string } {
+  if (!fullPhone) return { country: null, localNumber: "" }
+  
+  // Sort countries by dial code length (longest first) to match most specific first
+  const sortedCountries = [...countries].sort((a, b) => b.dialCode.length - a.dialCode.length)
+  
+  for (const country of sortedCountries) {
+    if (fullPhone.startsWith(country.dialCode)) {
+      return {
+        country,
+        localNumber: fullPhone.replace(country.dialCode, "")
+      }
+    }
+  }
+  
+  return { country: null, localNumber: fullPhone.replace(/^\+/, "") }
+}

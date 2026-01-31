@@ -31,12 +31,13 @@ export default function SignUpPage() {
   const [showSuccess, setShowSuccess] = useState(false)
   const supabase = createClient()
 
-  // Handle country change - update postal code placeholder and reset phone
+  // Handle country change - auto-populate postal code and reset phone
   const handleCountryChange = (countryCode: string) => {
     const country = countries.find(c => c.code === countryCode)
     setSelectedCountry(country || null)
     setPhoneNumber("")
-    setPostalCode("")
+    // Auto-populate postal code with country's placeholder/default value
+    setPostalCode(country?.postalCodePlaceholder || "")
     
     // Clear phone error when country changes
     if (fieldErrors.phone) {
@@ -394,11 +395,13 @@ export default function SignUpPage() {
                     id="postalCode"
                     type="text"
                     autoComplete="postal-code"
-                    placeholder={selectedCountry?.postalCodePlaceholder || ""}
+                    placeholder={selectedCountry ? "Auto-filled" : "Select country"}
                     value={postalCode}
-                    onChange={(e) => setPostalCode(e.target.value.toUpperCase())}
-                    className="h-12 border-0 border-b rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-foreground transition-colors"
+                    readOnly
+                    disabled
+                    className="h-12 border-0 border-b rounded-none bg-muted/30 focus-visible:ring-0 cursor-not-allowed"
                   />
+                  <p className="text-xs text-muted-foreground">Auto-filled based on country</p>
                 </div>
               </div>
             </>
