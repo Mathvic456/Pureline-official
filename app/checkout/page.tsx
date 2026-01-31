@@ -13,6 +13,8 @@ import { createCheckoutSession } from "@/app/actions/checkout"
 import { formatPrice, type Currency, getCurrencyFromStorage, getPriceForCurrency } from "@/lib/currency"
 import { getUserAddresses, addUserAddress } from "@/app/actions/user-profile"
 import { ChevronLeft, Lock, MapPin, Plus, Check, CreditCard, Loader2 } from "lucide-react"
+import { countries, type CountryData } from "@/lib/countries"
+import { CountryFlagSelector } from "@/components/country-flag-selector"
 
 interface ProductImage {
   id: string
@@ -35,10 +37,10 @@ export default function CheckoutPage() {
   const [currency, setCurrency] = useState<Currency>("USD")
   const [error, setError] = useState<string | null>(null)
   const [showAddressForm, setShowAddressForm] = useState(false)
+  const [selectedCountry, setSelectedCountry] = useState<CountryData | null>(null)
   const [newAddress, setNewAddress] = useState({
     streetAddress: "",
     city: "",
-    country: "",
     postalCode: "",
   })
   const supabase = createClient()
@@ -90,6 +92,14 @@ export default function CheckoutPage() {
     return () => window.removeEventListener("storage", handleStorageChange)
   }, [supabase, router])
 
+  const handleCountryChange = (countryCode: string) => {
+    const country = countries.find(c => c.code === countryCode)
+    setSelectedCountry(country || null)
+    if (country?.postalCodePlaceholder) {
+      setNewAddress(prev => ({ ...prev, postalCode: country.postalCodePlaceholder || "" }))
+    }
+  }
+
   const totalAmount = cartItems.reduce((sum, item) => {
     const price = getPriceForCurrency(item.products || {}, currency) || 0
     return sum + price * item.quantity
@@ -101,11 +111,23 @@ export default function CheckoutPage() {
     e.preventDefault()
     setError(null)
 
+    if (!selectedCountry) {
+      setError("Please select a country")
+      return
+    }
+
     try {
-      await addUserAddress(newAddress.streetAddress, newAddress.city, newAddress.country, newAddress.postalCode, true)
+      await addUserAddress(
+        newAddress.streetAddress, 
+        newAddress.city, 
+        selectedCountry.name, 
+        newAddress.postalCode, 
+        true
+      )
       const updatedAddresses = await getUserAddresses()
       setAddresses(updatedAddresses)
-      setNewAddress({ streetAddress: "", city: "", country: "", postalCode: "" })
+      setNewAddress({ streetAddress: "", city: "", postalCode: "" })
+      setSelectedCountry(null)
       setShowAddressForm(false)
 
       const newDefault = updatedAddresses.find((a) => a.is_default)
@@ -274,6 +296,23 @@ export default function CheckoutPage() {
                     className="w-full px-4 py-3 border border-border bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                     required
                   />
+                  
+                  {/* Country Selector */}
+                  <div className="space-y-2">
+                    <label className="text-sm text-muted-foreground">Country</label>
+                    <div className="flex items-center h-12 border border-border bg-background overflow-hidden">
+                      <CountryFlagSelector
+                        countries={countries}
+                        selectedCountry={selectedCountry}
+                        onSelect={handleCountryChange}
+                        required
+                      />
+                      <span className="flex-1 px-3 text-sm">
+                        {selectedCountry?.name || "Select a country"}
+                      </span>
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <input
                       type="text"
@@ -283,32 +322,38 @@ export default function CheckoutPage() {
                       className="w-full px-4 py-3 border border-border bg-background focus:outline-none focus:ring-2 focus:ring-ring"
                       required
                     />
-                    <input
-                      type="text"
-                      value={newAddress.country}
-                      onChange={(e) => setNewAddress({ ...newAddress, country: e.target.value })}
-                      placeholder="Country"
-                      className="w-full px-4 py-3 border border-border bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                      required
-                    />
+                    <div className="space-y-1">
+                      <input
+                        type="text"
+                        value={newAddress.postalCode}
+                        readOnly
+                        disabled
+                        placeholder={selectedCountry ? "Auto-filled" : "Select country"}
+                        className="w-full px-4 py-3 border border-border bg-muted cursor-not-allowed"
+                      />
+                      <p className="text-xs text-muted-foreground">Auto-filled based on country</p>
+                    </div>
                   </div>
-                  <input
-                    type="text"
-                    value={newAddress.postalCode}
-                    onChange={(e) => setNewAddress({ ...newAddress, postalCode: e.target.value })}
-                    placeholder="Postal code"
-                    className="w-full px-4 py-3 border border-border bg-background focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
+                  
                   <div className="flex gap-3">
                     <button
                       type="submit"
-                      className="px-6 py-3 bg-primary text-primary-foreground text-sm tracking-wider uppercase"
+                      disabled={!selectedCountry}
+                      className={`px-6 py-3 text-sm tracking-wider uppercase ${
+                        selectedCountry 
+                          ? "bg-primary text-primary-foreground" 
+                          : "bg-muted text-muted-foreground cursor-not-allowed"
+                      }`}
                     >
                       Save Address
                     </button>
                     <button
                       type="button"
-                      onClick={() => setShowAddressForm(false)}
+                      onClick={() => {
+                        setShowAddressForm(false)
+                        setSelectedCountry(null)
+                        setNewAddress({ streetAddress: "", city: "", postalCode: "" })
+                      }}
                       className="px-6 py-3 border border-border text-sm tracking-wider uppercase hover:bg-secondary transition-colors"
                     >
                       Cancel

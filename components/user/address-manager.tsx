@@ -2,17 +2,23 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { addUserAddress, deleteUserAddress, updateUserAddress } from "@/app/actions/user-profile"
+import { addUserAddress, deleteUserAddress, updateUserAddress, getUserAddresses } from "@/app/actions/user-profile"
 import { countries, type CountryData, getCountryByName } from "@/lib/countries"
 import { CountryFlagSelector } from "@/components/country-flag-selector"
 
-export function AddressManager({ addresses, onUpdate }: { addresses: any[]; onUpdate?: (addresses: any[]) => void }) {
+interface AddressManagerProps {
+  addresses: any[]
+  onUpdate?: () => Promise<void> | void
+}
+
+export function AddressManager({ addresses, onUpdate }: AddressManagerProps) {
+  const [localAddresses, setLocalAddresses] = useState<any[]>(addresses)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -48,6 +54,16 @@ export function AddressManager({ addresses, onUpdate }: { addresses: any[]; onUp
     setShowForm(false)
   }
 
+  const refreshAddresses = async () => {
+    try {
+      const updatedAddresses = await getUserAddresses()
+      setLocalAddresses(updatedAddresses)
+      await onUpdate?.()
+    } catch (error) {
+      console.error("Failed to refresh addresses:", error)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setMessage(null)
@@ -80,7 +96,7 @@ export function AddressManager({ addresses, onUpdate }: { addresses: any[]; onUp
         )
         setMessage({ type: "success", text: "Address added successfully!" })
       }
-      onUpdate?.(addresses)
+      await refreshAddresses()
       resetForm()
     } catch (error) {
       setMessage({
@@ -99,7 +115,7 @@ export function AddressManager({ addresses, onUpdate }: { addresses: any[]; onUp
     try {
       await deleteUserAddress(id)
       setMessage({ type: "success", text: "Address deleted successfully!" })
-      onUpdate?.()
+      await refreshAddresses()
     } catch (error) {
       setMessage({
         type: "error",
@@ -120,7 +136,10 @@ export function AddressManager({ addresses, onUpdate }: { addresses: any[]; onUp
 
       {/* Address List */}
       <div className="space-y-4">
-        {addresses.map((address) => (
+        {localAddresses.length === 0 && !showForm && (
+          <p className="text-muted-foreground text-center py-8">No addresses saved yet. Add your first address below.</p>
+        )}
+        {localAddresses.map((address) => (
           <Card key={address.id}>
             <CardHeader>
               <div className="flex justify-between items-start">
