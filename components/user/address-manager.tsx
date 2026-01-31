@@ -2,36 +2,48 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { addUserAddress, deleteUserAddress, updateUserAddress } from "@/app/actions/user-profile"
+import { countries, type CountryData, getCountryByName } from "@/lib/countries"
+import { CountryFlagSelector } from "@/components/country-flag-selector"
 
-export function AddressManager({ addresses, onUpdate }: { addresses: any[]; onUpdate?: () => void }) {
+export function AddressManager({ addresses, onUpdate }: { addresses: any[]; onUpdate?: (addresses: any[]) => void }) {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  const [selectedCountry, setSelectedCountry] = useState<CountryData | null>(null)
 
   const [formData, setFormData] = useState({
     streetAddress: "",
     city: "",
-    country: "",
     postalCode: "",
     isDefault: false,
   })
+
+  // Update postal code when country changes
+  const handleCountryChange = (countryCode: string) => {
+    const country = countries.find(c => c.code === countryCode)
+    setSelectedCountry(country || null)
+    // Set postal code placeholder as the default value
+    if (country?.postalCodePlaceholder) {
+      setFormData(prev => ({ ...prev, postalCode: country.postalCodePlaceholder || "" }))
+    }
+  }
 
   const resetForm = () => {
     setFormData({
       streetAddress: "",
       city: "",
-      country: "",
       postalCode: "",
       isDefault: false,
     })
+    setSelectedCountry(null)
     setEditingId(null)
     setShowForm(false)
   }
@@ -39,6 +51,12 @@ export function AddressManager({ addresses, onUpdate }: { addresses: any[]; onUp
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setMessage(null)
+
+    if (!selectedCountry) {
+      setMessage({ type: "error", text: "Please select a country" })
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -47,7 +65,7 @@ export function AddressManager({ addresses, onUpdate }: { addresses: any[]; onUp
           editingId,
           formData.streetAddress,
           formData.city,
-          formData.country,
+          selectedCountry.name,
           formData.postalCode,
           formData.isDefault,
         )
@@ -56,13 +74,13 @@ export function AddressManager({ addresses, onUpdate }: { addresses: any[]; onUp
         await addUserAddress(
           formData.streetAddress,
           formData.city,
-          formData.country,
+          selectedCountry.name,
           formData.postalCode,
           formData.isDefault,
         )
         setMessage({ type: "success", text: "Address added successfully!" })
       }
-      onUpdate?.()
+      onUpdate?.(addresses)
       resetForm()
     } catch (error) {
       setMessage({
@@ -124,12 +142,15 @@ export function AddressManager({ addresses, onUpdate }: { addresses: any[]; onUp
                 <Button
                   size="sm"
                   variant="outline"
+                  className="bg-transparent"
                   onClick={() => {
+                    // Find the country by name and set it
+                    const country = getCountryByName(address.country)
+                    setSelectedCountry(country || null)
                     setFormData({
                       streetAddress: address.street_address,
                       city: address.city,
-                      country: address.country,
-                      postalCode: address.postal_code || "",
+                      postalCode: address.postal_code || country?.postalCodePlaceholder || "",
                       isDefault: address.is_default,
                     })
                     setEditingId(address.id)
@@ -166,6 +187,21 @@ export function AddressManager({ addresses, onUpdate }: { addresses: any[]; onUp
                 />
               </div>
 
+              <div className="grid gap-2">
+                <Label htmlFor="country">Country</Label>
+                <div className="flex items-center h-10 border border-input rounded-md overflow-hidden">
+                  <CountryFlagSelector
+                    countries={countries}
+                    selectedCountry={selectedCountry}
+                    onSelect={handleCountryChange}
+                    required
+                  />
+                  <span className="flex-1 px-3 text-sm">
+                    {selectedCountry?.name || "Select a country"}
+                  </span>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="city">City</Label>
@@ -178,25 +214,17 @@ export function AddressManager({ addresses, onUpdate }: { addresses: any[]; onUp
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="country">Country</Label>
+                  <Label htmlFor="postalCode">Postal Code</Label>
                   <Input
-                    id="country"
-                    value={formData.country}
-                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                    placeholder="USA"
-                    required
+                    id="postalCode"
+                    value={formData.postalCode}
+                    readOnly
+                    disabled
+                    className="bg-muted"
+                    placeholder={selectedCountry?.postalCodePlaceholder || "Select country first"}
                   />
+                  <p className="text-xs text-muted-foreground">Auto-filled based on country</p>
                 </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="postalCode">Postal Code</Label>
-                <Input
-                  id="postalCode"
-                  value={formData.postalCode}
-                  onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                  placeholder="10001"
-                />
               </div>
 
               <div className="flex items-center gap-2">
