@@ -224,7 +224,9 @@ export default function AccountPage() {
                 <h2 className="text-xl font-serif mb-6">Profile Information</h2>
                 <ProfileEditor 
                   initialProfile={profile} 
-                  onUpdate={(updatedProfile) => setProfile(updatedProfile)} 
+                  onUpdate={(updatedProfile) => {
+                    setProfile((prev: any) => ({ ...prev, ...updatedProfile }))
+                  }} 
                 />
               </div>
             )}
@@ -235,7 +237,10 @@ export default function AccountPage() {
                 <h2 className="text-xl font-serif mb-6">Saved Addresses</h2>
                 <AddressManager 
                   addresses={addresses} 
-                  onUpdate={(updatedAddresses) => setAddresses(updatedAddresses)} 
+                  onUpdate={async () => {
+                    const updatedAddresses = await getUserAddresses()
+                    setAddresses(updatedAddresses)
+                  }} 
                 />
               </div>
             )}
