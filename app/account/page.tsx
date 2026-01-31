@@ -36,11 +36,20 @@ export default function AccountPage() {
       setUser(data.user)
       setCurrency(getCurrencyFromStorage())
 
-      const profileData = await getUserProfile()
-      setProfile(profileData)
+      try {
+        const profileData = await getUserProfile()
+        setProfile(profileData)
+      } catch (error) {
+        console.log("[v0] Error fetching profile:", error)
+      }
 
-      const addressesData = await getUserAddresses()
-      setAddresses(addressesData)
+      try {
+        const addressesData = await getUserAddresses()
+        console.log("[v0] Fetched addresses:", addressesData)
+        setAddresses(addressesData)
+      } catch (error) {
+        console.log("[v0] Error fetching addresses:", error)
+      }
 
       const { data: ordersData } = await supabase
         .from("orders")

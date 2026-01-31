@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { addUserAddress, deleteUserAddress, updateUserAddress, getUserAddresses } from "@/app/actions/user-profile"
 import { countries, type CountryData, getCountryByName } from "@/lib/countries"
-import { CountryFlagSelector } from "@/components/country-flag-selector"
+import Image from "next/image"
+import { ChevronDown, Search, Plus, Loader2 } from "lucide-react"
 
 interface AddressManagerProps {
   addresses: any[]
@@ -24,6 +25,27 @@ export function AddressManager({ addresses, onUpdate }: AddressManagerProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
   const [selectedCountry, setSelectedCountry] = useState<CountryData | null>(null)
+  const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false)
+  const [countrySearch, setCountrySearch] = useState("")
+  const countryDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Sync local addresses with props when they change
+  useEffect(() => {
+    setLocalAddresses(addresses)
+  }, [addresses])
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (countryDropdownRef.current && !countryDropdownRef.current.contains(event.target as Node)) {
+        setIsCountryDropdownOpen(false)
+        setCountrySearch("")
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
   const [formData, setFormData] = useState({
     streetAddress: "",
@@ -32,10 +54,20 @@ export function AddressManager({ addresses, onUpdate }: AddressManagerProps) {
     isDefault: false,
   })
 
+  const getFlagUrl = (countryCode: string) => {
+    return `https://flagcdn.com/w40/${countryCode.toLowerCase()}.png`
+  }
+
+  const filteredCountries = countries.filter(country =>
+    country.name.toLowerCase().includes(countrySearch.toLowerCase()) ||
+    country.code.toLowerCase().includes(countrySearch.toLowerCase())
+  )
+
   // Update postal code when country changes
-  const handleCountryChange = (countryCode: string) => {
-    const country = countries.find(c => c.code === countryCode)
-    setSelectedCountry(country || null)
+  const handleCountrySelect = (country: CountryData) => {
+    setSelectedCountry(country)
+    setIsCountryDropdownOpen(false)
+    setCountrySearch("")
     // Set postal code placeholder as the default value
     if (country?.postalCodePlaceholder) {
       setFormData(prev => ({ ...prev, postalCode: country.postalCodePlaceholder || "" }))
@@ -52,6 +84,9 @@ export function AddressManager({ addresses, onUpdate }: AddressManagerProps) {
     setSelectedCountry(null)
     setEditingId(null)
     setShowForm(false)
+    setIsCountryDropdownOpen(false)
+    setCountrySearch("")
+    setMessage(null)
   }
 
   const refreshAddresses = async () => {
@@ -73,10 +108,22 @@ export function AddressManager({ addresses, onUpdate }: AddressManagerProps) {
       return
     }
 
+    if (!formData.streetAddress.trim()) {
+      setMessage({ type: "error", text: "Please enter a street address" })
+      return
+    }
+
+    if (!formData.city.trim()) {
+      setMessage({ type: "error", text: "Please enter a city" })
+      return
+    }
+
     setIsLoading(true)
+    console.log("[v0] Saving address:", { ...formData, country: selectedCountry.name })
 
     try {
       if (editingId) {
+        console.log("[v0] Updating address:", editingId)
         await updateUserAddress(
           editingId,
           formData.streetAddress,
@@ -87,18 +134,36 @@ export function AddressManager({ addresses, onUpdate }: AddressManagerProps) {
         )
         setMessage({ type: "success", text: "Address updated successfully!" })
       } else {
-        await addUserAddress(
+        console.log("[v0] Adding new address")
+        const result = await addUserAddress(
           formData.streetAddress,
           formData.city,
           selectedCountry.name,
           formData.postalCode,
           formData.isDefault,
         )
+        console.log("[v0] Address added:", result)
         setMessage({ type: "success", text: "Address added successfully!" })
       }
+      
+      // Refresh the addresses list
+      console.log("[v0] Refreshing addresses...")
       await refreshAddresses()
-      resetForm()
+      
+      // Reset form after successful save
+      setFormData({
+        streetAddress: "",
+        city: "",
+        postalCode: "",
+        isDefault: false,
+      })
+      setSelectedCountry(null)
+      setEditingId(null)
+      setShowForm(false)
+      setIsCountryDropdownOpen(false)
+      setCountrySearch("")
     } catch (error) {
+      console.log("[v0] Error saving address:", error)
       setMessage({
         type: "error",
         text: error instanceof Error ? error.message : "Failed to save address",
@@ -207,17 +272,83 @@ export function AddressManager({ addresses, onUpdate }: AddressManagerProps) {
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="country">Country</Label>
-                <div className="flex items-center h-10 border border-input rounded-md overflow-hidden">
-                  <CountryFlagSelector
-                    countries={countries}
-                    selectedCountry={selectedCountry}
-                    onSelect={handleCountryChange}
-                    required
-                  />
-                  <span className="flex-1 px-3 text-sm">
-                    {selectedCountry?.name || "Select a country"}
-                  </span>
+                <Label htmlFor="country">Country *</Label>
+                <div className="relative" ref={countryDropdownRef}>
+                  {/* Country Dropdown Trigger */}
+                  <button
+                    type="button"
+                    onClick={() => setIsCountryDropdownOpen(!isCountryDropdownOpen)}
+                    className="w-full flex items-center justify-between h-10 px-3 border border-input rounded-md bg-background hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      {selectedCountry ? (
+                        <>
+                          <Image
+                            src={getFlagUrl(selectedCountry.code) || "/placeholder.svg"}
+                            alt={selectedCountry.name}
+                            width={24}
+                            height={16}
+                            className="rounded-sm object-cover"
+                            unoptimized
+                          />
+                          <span className="text-sm">{selectedCountry.name}</span>
+                        </>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">Select a country</span>
+                      )}
+                    </div>
+                    <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${isCountryDropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
+
+                  {/* Country Dropdown Menu */}
+                  {isCountryDropdownOpen && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-background border border-border rounded-md shadow-lg z-50 max-h-64 overflow-hidden">
+                      {/* Search Input */}
+                      <div className="p-2 border-b border-border">
+                        <div className="relative">
+                          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <input
+                            type="text"
+                            value={countrySearch}
+                            onChange={(e) => setCountrySearch(e.target.value)}
+                            placeholder="Search countries..."
+                            className="w-full h-9 pl-8 pr-3 text-sm bg-muted/50 rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
+                            autoFocus
+                          />
+                        </div>
+                      </div>
+
+                      {/* Country List */}
+                      <div className="overflow-y-auto max-h-48">
+                        {filteredCountries.length === 0 ? (
+                          <div className="p-3 text-sm text-muted-foreground text-center">
+                            No countries found
+                          </div>
+                        ) : (
+                          filteredCountries.map((country) => (
+                            <button
+                              key={country.code}
+                              type="button"
+                              onClick={() => handleCountrySelect(country)}
+                              className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-muted/50 transition-colors ${
+                                selectedCountry?.code === country.code ? "bg-muted" : ""
+                              }`}
+                            >
+                              <Image
+                                src={getFlagUrl(country.code) || "/placeholder.svg"}
+                                alt={country.name}
+                                width={24}
+                                height={16}
+                                className="rounded-sm object-cover flex-shrink-0"
+                                unoptimized
+                              />
+                              <span className="text-sm flex-1 truncate">{country.name}</span>
+                            </button>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -259,11 +390,18 @@ export function AddressManager({ addresses, onUpdate }: AddressManagerProps) {
                 </Label>
               </div>
 
-              <div className="flex gap-2">
-                <Button type="submit" disabled={isLoading}>
-                  {isLoading ? "Saving..." : "Save Address"}
+              <div className="flex gap-2 pt-2">
+                <Button type="submit" disabled={isLoading || !selectedCountry} className="min-w-32">
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Address"
+                  )}
                 </Button>
-                <Button type="button" variant="outline" onClick={resetForm} disabled={isLoading}>
+                <Button type="button" variant="outline" className="bg-transparent" onClick={resetForm} disabled={isLoading}>
                   Cancel
                 </Button>
               </div>
@@ -272,7 +410,12 @@ export function AddressManager({ addresses, onUpdate }: AddressManagerProps) {
         </Card>
       )}
 
-      {!showForm && <Button onClick={() => setShowForm(true)}>Add New Address</Button>}
+      {!showForm && (
+        <Button onClick={() => setShowForm(true)} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Add New Address
+        </Button>
+      )}
     </div>
   )
 }
