@@ -13,22 +13,31 @@ ON CONFLICT (id) DO UPDATE SET
   allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
 
 -- Drop existing policies if they exist to avoid conflicts
-DROP POLICY IF EXISTS "Allow public read access" ON storage.objects;
-DROP POLICY IF EXISTS "Allow authenticated uploads" ON storage.objects;
-DROP POLICY IF EXISTS "Allow service role full access" ON storage.objects;
+DROP POLICY IF EXISTS "product_images_public_read" ON storage.objects;
+DROP POLICY IF EXISTS "product_images_authenticated_insert" ON storage.objects;
+DROP POLICY IF EXISTS "product_images_service_role" ON storage.objects;
 
--- Policy: Allow public read access to product images
-CREATE POLICY "Allow public read access"
+-- Policy: Allow public read access to product images bucket only
+CREATE POLICY "product_images_public_read"
 ON storage.objects FOR SELECT
+TO public
 USING (bucket_id = 'product_images');
 
--- Policy: Allow authenticated users to upload images
-CREATE POLICY "Allow authenticated uploads"
+-- Policy: Allow anyone to upload to product_images bucket (service role handles auth)
+CREATE POLICY "product_images_authenticated_insert"
 ON storage.objects FOR INSERT
+TO public
 WITH CHECK (bucket_id = 'product_images');
 
--- Policy: Allow service role to manage all objects (for admin operations)
-CREATE POLICY "Allow service role full access"
-ON storage.objects
+-- Policy: Allow updates on product_images bucket
+CREATE POLICY "product_images_update"
+ON storage.objects FOR UPDATE
+TO public
 USING (bucket_id = 'product_images')
 WITH CHECK (bucket_id = 'product_images');
+
+-- Policy: Allow deletes on product_images bucket
+CREATE POLICY "product_images_delete"
+ON storage.objects FOR DELETE
+TO public
+USING (bucket_id = 'product_images');
