@@ -16,6 +16,8 @@ ON CONFLICT (id) DO UPDATE SET
 DROP POLICY IF EXISTS "product_images_public_read" ON storage.objects;
 DROP POLICY IF EXISTS "product_images_authenticated_insert" ON storage.objects;
 DROP POLICY IF EXISTS "product_images_service_role" ON storage.objects;
+DROP POLICY IF EXISTS "product_images_update" ON storage.objects;
+DROP POLICY IF EXISTS "product_images_delete" ON storage.objects;
 
 -- Policy: Allow public read access to product images bucket only
 CREATE POLICY "product_images_public_read"
