@@ -132,7 +132,7 @@ export function Navbar() {
                 Shop All
               </Link>
               <Link 
-                href="/categories?category=new" 
+                href="/new-arrivals" 
                 className="text-sm tracking-wider uppercase hover:opacity-60 transition-opacity"
               >
                 New Arrivals
@@ -175,7 +175,7 @@ export function Navbar() {
                 Shop All
               </Link>
               <Link 
-                href="/categories?category=new"
+                href="/new-arrivals"
                 className="text-2xl font-serif tracking-wider hover:opacity-60 transition-opacity animate-fade-up stagger-2"
               >
                 New Arrivals
