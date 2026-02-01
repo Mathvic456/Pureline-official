@@ -3,7 +3,6 @@
 import type React from "react"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { uploadProductImage } from "@/app/actions/upload-image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -50,11 +49,22 @@ export default function AdminCategories() {
     try {
       const imageFormData = new FormData()
       imageFormData.append("file", file)
-      const url = await uploadProductImage(imageFormData)
-      setFormData({ ...formData, imageUrl: url })
+      
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: imageFormData,
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Upload failed")
+      }
+      
+      setFormData({ ...formData, imageUrl: data.url })
     } catch (error) {
       console.error("Upload failed:", error)
-      alert("Failed to upload image. Please try again.")
+      alert(error instanceof Error ? error.message : "Failed to upload image. Please try again.")
       setImagePreview(null)
     } finally {
       setUploading(false)
