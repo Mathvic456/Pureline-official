@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import type { Product, Category } from "@/lib/categories"
 import { Edit2, Trash2, X, Upload } from "lucide-react"
-import { uploadProductImage } from "@/app/actions/upload-image"
 
 interface ProductImage {
   id: string
@@ -79,13 +78,24 @@ export default function AdminProducts() {
     try {
       const imageFormData = new FormData()
       imageFormData.append("file", file)
-      const uploadedUrl = await uploadProductImage(imageFormData)
+      
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: imageFormData,
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Upload failed")
+      }
+      
       const newImages = [...formData.images]
-      newImages[index] = { file: null, url: uploadedUrl }
+      newImages[index] = { file: null, url: data.url }
       setFormData({ ...formData, images: newImages })
     } catch (error) {
       console.error("[v0] Upload failed:", error)
-      alert("Failed to upload image. Please try again.")
+      alert(error instanceof Error ? error.message : "Failed to upload image. Please try again.")
     } finally {
       setUploadingIndices((prev) => {
         const next = new Set(prev)
