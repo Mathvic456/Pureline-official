@@ -87,7 +87,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/categories?category=new" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm">
+                <Link href="/new-arrivals" className="text-primary-foreground/70 hover:text-primary-foreground transition-colors text-sm">
                   New Arrivals
                 </Link>
               </li>

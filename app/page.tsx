@@ -119,22 +119,27 @@ export default async function Home() {
               ))
             ) : (
               <>
-                {["New Arrivals", "Best Sellers", "Featured", "Collections"].map((name, index) => (
+                {[
+                  { name: "New Arrivals", href: "/new-arrivals" },
+                  { name: "Best Sellers", href: "/categories" },
+                  { name: "Featured", href: "/categories" },
+                  { name: "Collections", href: "/collections" },
+                ].map((item, index) => (
                   <Link 
-                    key={name} 
-                    href="/categories"
+                    key={item.name} 
+                    href={item.href}
                     className="group relative aspect-[3/4] overflow-hidden img-zoom"
                   >
                     <Image
                       src={`https://images.unsplash.com/photo-${index === 0 ? "1441986300917-64674bd600d8" : index === 1 ? "1472851294608-062f824d29cc" : index === 2 ? "1560472354-b33ff0c44a43" : "1556905055-8f358a7a47b2"}?w=600&q=80`}
-                      alt={name}
+                      alt={item.name}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"
                     />
                     <div className="absolute inset-0 bg-black/30 group-hover:bg-black/40 transition-colors" />
                     <div className="absolute inset-0 flex flex-col items-center justify-center text-white p-4">
                       <h3 className="text-lg md:text-xl lg:text-2xl font-serif text-center tracking-wider uppercase">
-                        {name}
+                        {item.name}
                       </h3>
                       <span className="mt-2 text-xs tracking-wider opacity-0 group-hover:opacity-100 transition-opacity uppercase">
                         Shop Now
