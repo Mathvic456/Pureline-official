@@ -3,9 +3,11 @@
 import { getAdminClient } from "@/lib/supabase/admin"
 import { v4 as uuidv4 } from "uuid"
 
-export async function uploadProductImage(file: File): Promise<string> {
+export async function uploadProductImage(formData: FormData): Promise<string> {
   try {
-    if (!file) {
+    const file = formData.get("file") as File
+    
+    if (!file || !(file instanceof File)) {
       throw new Error("No file provided")
     }
 
@@ -51,7 +53,6 @@ export async function uploadProductImage(file: File): Promise<string> {
       throw new Error("Failed to generate public URL")
     }
 
-    console.log("[v0] Image uploaded successfully:", publicUrl)
     return publicUrl
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error occurred during upload"

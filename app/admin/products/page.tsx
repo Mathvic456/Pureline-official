@@ -77,7 +77,9 @@ export default function AdminProducts() {
 
     setUploadingIndices((prev) => new Set(prev).add(index))
     try {
-      const uploadedUrl = await uploadProductImage(file)
+      const imageFormData = new FormData()
+      imageFormData.append("file", file)
+      const uploadedUrl = await uploadProductImage(imageFormData)
       const newImages = [...formData.images]
       newImages[index] = { file: null, url: uploadedUrl }
       setFormData({ ...formData, images: newImages })
