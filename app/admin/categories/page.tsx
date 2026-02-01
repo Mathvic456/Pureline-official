@@ -48,7 +48,9 @@ export default function AdminCategories() {
 
     setUploading(true)
     try {
-      const url = await uploadProductImage(file)
+      const imageFormData = new FormData()
+      imageFormData.append("file", file)
+      const url = await uploadProductImage(imageFormData)
       setFormData({ ...formData, imageUrl: url })
     } catch (error) {
       console.error("Upload failed:", error)
