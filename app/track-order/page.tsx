@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { MobileNav } from "@/components/mobile-nav"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -75,8 +74,6 @@ export default function ProjectInquiryPage() {
         )}
       </div>
 
-      <MobileNav />
-      <div className="h-16 lg:hidden" />
     </main>
   )
 }

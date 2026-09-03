@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ArrowRight, Palette, Home as HomeIcon, Lightbulb, Award, Users, CheckCircle } from "lucide-react"
 import Image from "next/image"
 import { getAllProjects } from "@/lib/projects"
+import { TypingHeading } from "@/components/typing-heading"
 
 // Mock data for services and portfolio
 const services = [
@@ -66,9 +67,10 @@ export default function Home() {
           <p className="text-sm tracking-[0.3em] uppercase text-white/80 animate-fade-down">
             Premium Interior Design Services | Renovation | Space Planning
           </p>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif text-white leading-tight animate-fade-up text-balance">
-            Transform Your Space Into Something Extraordinary
-          </h1>
+          <TypingHeading
+            text="Transform Your Space Into Something Extraordinary"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-serif text-white leading-tight animate-fade-up text-balance"
+          />
           <p className="text-lg md:text-xl text-white/80 max-w-xl mx-auto animate-fade-up stagger-1">
             Creating sophisticated, timeless interiors that reflect your personal style and elevate your lifestyle
           </p>
@@ -89,11 +91,11 @@ export default function Home() {
         </div>
 
         {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-float">
+        {/* <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-float">
           <div className="w-6 h-10 border-2 border-white/50 rounded-full flex justify-center pt-2">
             <div className="w-1 h-2 bg-white/50 rounded-full" />
           </div>
-        </div>
+        </div> */}
       </section>
 
       {/* Our Services */}

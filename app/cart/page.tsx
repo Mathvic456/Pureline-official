@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { MobileNav } from "@/components/mobile-nav"
 
 export default function CartPage() {
   const [message, setMessage] = useState("")
@@ -36,8 +35,6 @@ export default function CartPage() {
         )}
       </div>
 
-      <MobileNav />
-      <div className="h-16 lg:hidden" />
     </main>
   )
 }

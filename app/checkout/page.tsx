@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { Footer } from "@/components/footer"
-import { MobileNav } from "@/components/mobile-nav"
 
 export default function CheckoutPage() {
   const [status, setStatus] = useState("")
@@ -41,7 +40,6 @@ export default function CheckoutPage() {
         )}
       </div>
 
-      <div className="h-16 lg:hidden" />
     </main>
   )
 }

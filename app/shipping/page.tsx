@@ -1,6 +1,5 @@
 "use client"
 
-import { MobileNav } from "@/components/mobile-nav"
 import { Truck, RotateCcw, Package, Clock, Globe } from "lucide-react"
 
 export default function OurProcessPage() {
@@ -80,8 +79,6 @@ export default function OurProcessPage() {
         </div>
       </div>
 
-      <MobileNav />
-      <div className="h-16 lg:hidden" />
     </main>
   )
 }

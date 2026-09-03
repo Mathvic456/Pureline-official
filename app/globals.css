@@ -118,6 +118,24 @@ html {
   scroll-behavior: smooth;
 }
 
+/* Keep theme changes readable instead of flashing between color schemes. */
+.theme-transition,
+.theme-transition * {
+  transition-property: background-color, border-color, color, fill, stroke, box-shadow !important;
+  transition-duration: 700ms !important;
+  transition-timing-function: ease-in-out !important;
+}
+
+@keyframes theme-switch {
+  0% { transform: rotate(0deg) scale(1); }
+  45% { transform: rotate(18deg) scale(0.8); }
+  100% { transform: rotate(0deg) scale(1); }
+}
+
+.animate-theme-switch {
+  animation: theme-switch 700ms ease-in-out;
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;

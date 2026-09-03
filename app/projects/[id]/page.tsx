@@ -81,7 +81,6 @@ export default function ProjectDetailPage() {
         )}
       </div>
 
-      <div className="h-16 lg:hidden" />
     </main>
   )
 }

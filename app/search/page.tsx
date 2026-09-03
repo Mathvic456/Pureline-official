@@ -5,7 +5,6 @@ import React from "react"
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { MobileNav } from "@/components/mobile-nav"
 import { getAllProjects, type Project } from "@/lib/projects"
 import { Search, X, ArrowRight } from "lucide-react"
 
@@ -240,8 +239,6 @@ export default function SearchPage() {
         )}
       </div>
 
-      <MobileNav />
-      <div className="h-16 lg:hidden" />
     </main>
   )
 }

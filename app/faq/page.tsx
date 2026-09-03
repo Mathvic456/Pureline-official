@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { MobileNav } from "@/components/mobile-nav"
 import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -183,8 +182,6 @@ export default function FAQPage() {
         </div>
       </div>
 
-      <MobileNav />
-      <div className="h-16 lg:hidden" />
     </main>
   )
 }
