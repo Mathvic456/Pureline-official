@@ -49,7 +49,7 @@ export default function SearchPage() {
     fetchData()
 
     return () => {}
-  }, [supabase])
+  }, [])
 
   const performSearch = useCallback((query: string) => {
     if (!query.trim()) {
@@ -64,7 +64,7 @@ export default function SearchPage() {
     )
     setFilteredProjects(filtered)
     setSearching(false)
-  }, [products])
+  }, [projects])
 
   useEffect(() => {
     const debounce = setTimeout(() => {
