@@ -3,27 +3,11 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Home, Search, Grid3X3, User, ShoppingBag } from "lucide-react"
-import { useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { useState } from "react"
 
 export function MobileNav() {
   const pathname = usePathname()
-  const [cartCount, setCartCount] = useState(0)
-  const supabase = createClient()
-
-  useEffect(() => {
-    const getCartCount = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { count } = await supabase
-          .from("cart_items")
-          .select("*", { count: "exact" })
-          .eq("user_id", user.id)
-        setCartCount(count || 0)
-      }
-    }
-    getCartCount()
-  }, [supabase, pathname])
+  const [cartCount] = useState(0)
 
   const isActive = (path: string) => pathname === path
 
@@ -56,13 +40,13 @@ export function MobileNav() {
         </Link>
 
         <Link 
-          href="/categories" 
+          href="/portfolio" 
           className={`flex flex-col items-center gap-1 p-2 transition-opacity ${
-            isActive("/categories") ? "opacity-100" : "opacity-50 hover:opacity-75"
+            isActive("/portfolio") ? "opacity-100" : "opacity-50 hover:opacity-75"
           }`}
         >
           <Grid3X3 size={20} />
-          <span className="text-[10px] uppercase tracking-wider">Shop</span>
+          <span className="text-[10px] uppercase tracking-wider">Portfolio</span>
         </Link>
 
         <Link 
@@ -72,12 +56,7 @@ export function MobileNav() {
           }`}
         >
           <ShoppingBag size={20} />
-          {cartCount > 0 && (
-            <span className="absolute top-1 right-1 bg-primary text-primary-foreground text-[9px] font-medium rounded-full w-4 h-4 flex items-center justify-center">
-              {cartCount}
-            </span>
-          )}
-          <span className="text-[10px] uppercase tracking-wider">Cart</span>
+          <span className="text-[10px] uppercase tracking-wider">Inquiries</span>
         </Link>
 
         <Link 

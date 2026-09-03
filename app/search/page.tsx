@@ -5,11 +5,8 @@ import React from "react"
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Navbar } from "@/components/navbar"
-import { Footer } from "@/components/footer"
 import { MobileNav } from "@/components/mobile-nav"
-import { createClient } from "@/lib/supabase/client"
-import { getCurrencyFromStorage, type Currency, getPriceForCurrency, formatPrice } from "@/lib/currency"
+import { getAllProjects, type Project } from "@/lib/projects"
 import { Search, X, ArrowRight } from "lucide-react"
 
 interface ProductImage {
@@ -22,9 +19,6 @@ interface Product {
   id: string
   name: string
   description: string
-  price_usd: number
-  price_gbp: number
-  price_eur: number
   category_id: string
   product_images?: ProductImage[]
   categories?: { name: string }
@@ -32,24 +26,17 @@ interface Product {
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [products, setProducts] = useState<Product[]>([])
-  const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
+  const [projects, setProjects] = useState<Project[]>([])
+  const [filteredProjects, setFilteredProjects] = useState<Project[]>([])
   const [recentSearches, setRecentSearches] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [searching, setSearching] = useState(false)
-  const [currency, setCurrency] = useState<Currency>("USD")
-  const supabase = createClient()
+  const [currency, setCurrency] = useState<string>("")
 
   useEffect(() => {
     const fetchData = async () => {
-      setCurrency(getCurrencyFromStorage())
-
-      const { data: productsData } = await supabase
-        .from("products")
-        .select("*, product_images(*), categories(name)")
-        .order("created_at", { ascending: false })
-
-      setProducts(productsData || [])
+      const data = getAllProjects()
+      setProjects(data)
       setLoading(false)
     }
 
@@ -61,11 +48,7 @@ export default function SearchPage() {
 
     fetchData()
 
-    const handleStorageChange = () => {
-      setCurrency(getCurrencyFromStorage())
-    }
-    window.addEventListener("storage", handleStorageChange)
-    return () => window.removeEventListener("storage", handleStorageChange)
+    return () => {}
   }, [supabase])
 
   const performSearch = useCallback((query: string) => {
@@ -76,13 +59,10 @@ export default function SearchPage() {
     }
 
     setSearching(true)
-    const filtered = products.filter(
-      (product) =>
-        product.name.toLowerCase().includes(query.toLowerCase()) ||
-        product.description?.toLowerCase().includes(query.toLowerCase()) ||
-        product.categories?.name?.toLowerCase().includes(query.toLowerCase())
+    const filtered = projects.filter(
+      (p) => p.name.toLowerCase().includes(query.toLowerCase()) || p.description?.toLowerCase().includes(query.toLowerCase()) || p.category?.toLowerCase().includes(query.toLowerCase())
     )
-    setFilteredProducts(filtered)
+    setFilteredProjects(filtered)
     setSearching(false)
   }, [products])
 
@@ -114,7 +94,6 @@ export default function SearchPage() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <Navbar />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-16">
         {/* Search Header */}
@@ -149,11 +128,11 @@ export default function SearchPage() {
           <div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-medium">
-                {searching ? "Searching..." : `${filteredProducts.length} result${filteredProducts.length !== 1 ? "s" : ""}`}
+                {searching ? "Searching..." : `${filteredProjects.length} result${filteredProjects.length !== 1 ? "s" : ""}`}
               </h2>
-              {filteredProducts.length > 0 && (
+              {filteredProjects.length > 0 && (
                 <Link 
-                  href={`/categories?search=${encodeURIComponent(searchQuery)}`}
+                  href={`/portfolio?search=${encodeURIComponent(searchQuery)}`}
                   className="text-sm flex items-center gap-1 hover:opacity-60 transition-opacity"
                 >
                   View all
@@ -162,33 +141,25 @@ export default function SearchPage() {
               )}
             </div>
 
-            {filteredProducts.length > 0 ? (
+            {filteredProjects.length > 0 ? (
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-                {filteredProducts.slice(0, 9).map((product) => {
-                  const firstImage = product.product_images?.[0]?.image_url
-                  const price = getPriceForCurrency(product, currency)
-                  return (
-                    <Link key={product.id} href={`/products/${product.id}`} className="group">
-                      <div className="relative aspect-[3/4] overflow-hidden mb-4 bg-secondary">
-                        <Image
-                          src={firstImage || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80"}
-                          alt={product.name}
-                          fill
-                          className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                          {product.categories?.name || "LuxuryByEsta"}
-                        </p>
-                        <h3 className="font-medium group-hover:opacity-60 transition-opacity line-clamp-1">
-                          {product.name}
-                        </h3>
-                        <p className="text-sm">{formatPrice(price, currency)}</p>
-                      </div>
-                    </Link>
-                  )
-                })}
+                {filteredProjects.slice(0, 9).map((p) => (
+                  <Link key={p.id} href={`/projects/${p.id}`} className="group">
+                    <div className="relative aspect-[3/4] overflow-hidden mb-4 bg-secondary">
+                      <Image
+                        src={p.images?.[0] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80"}
+                        alt={p.name}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wider">{p.category || "Interior"}</p>
+                      <h3 className="font-medium group-hover:opacity-60 transition-opacity line-clamp-1">{p.name}</h3>
+                      <p className="text-sm text-muted-foreground">{p.year || ""}</p>
+                    </div>
+                  </Link>
+                ))}
               </div>
             ) : !searching && (
               <div className="text-center py-16">
@@ -246,35 +217,22 @@ export default function SearchPage() {
             </div>
 
             {/* Trending Products */}
-            {!loading && products.length > 0 && (
+            {!loading && projects.length > 0 && (
               <div>
                 <h2 className="text-sm uppercase tracking-wider text-muted-foreground mb-6">Trending Now</h2>
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
-                  {products.slice(0, 6).map((product) => {
-                    const firstImage = product.product_images?.[0]?.image_url
-                    const price = getPriceForCurrency(product, currency)
-                    return (
-                      <Link key={product.id} href={`/products/${product.id}`} className="group">
-                        <div className="relative aspect-[3/4] overflow-hidden mb-4 bg-secondary">
-                          <Image
-                            src={firstImage || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80"}
-                            alt={product.name}
-                            fill
-                            className="object-cover transition-transform duration-500 group-hover:scale-105"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                            {product.categories?.name || "LuxuryByEsta"}
-                          </p>
-                          <h3 className="font-medium group-hover:opacity-60 transition-opacity line-clamp-1">
-                            {product.name}
-                          </h3>
-                          <p className="text-sm">{formatPrice(price, currency)}</p>
-                        </div>
-                      </Link>
-                    )
-                  })}
+                  {projects.slice(0, 6).map((p) => (
+                    <Link key={p.id} href={`/projects/${p.id}`} className="group">
+                      <div className="relative aspect-[3/4] overflow-hidden mb-4 bg-secondary">
+                        <Image src={p.images?.[0] || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=600&q=80"} alt={p.name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">{p.category || "Interior"}</p>
+                        <h3 className="font-medium group-hover:opacity-60 transition-opacity line-clamp-1">{p.name}</h3>
+                        <p className="text-sm text-muted-foreground">{p.year || ""}</p>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
               </div>
             )}
@@ -282,7 +240,6 @@ export default function SearchPage() {
         )}
       </div>
 
-      <Footer />
       <MobileNav />
       <div className="h-16 lg:hidden" />
     </main>

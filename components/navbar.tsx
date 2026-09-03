@@ -1,42 +1,37 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
-import { ShoppingBag, Search, User, Menu, X } from "lucide-react"
-import { useRouter, usePathname } from "next/navigation"
+import { Menu, X, Phone, Mail } from "lucide-react"
+import { usePathname } from "next/navigation"
 
 export function Navbar() {
-  const [user, setUser] = useState<any>(null)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [cartCount, setCartCount] = useState(0)
   const [isScrolled, setIsScrolled] = useState(false)
-  const supabase = createClient()
-  const router = useRouter()
+  const [isVisible, setIsVisible] = useState(true)
   const pathname = usePathname()
-
-  useEffect(() => {
-    const checkUser = async () => {
-      const { data } = await supabase.auth.getUser()
-      setUser(data?.user || null)
-
-      if (data?.user) {
-        const { count } = await supabase
-          .from("cart_items")
-          .select("*", { count: "exact" })
-          .eq("user_id", data.user.id)
-        setCartCount(count || 0)
-      }
-    }
-
-    checkUser()
-  }, [supabase])
+  const lastY = useRef(0)
 
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
+      const y = window.scrollY
+      const scrollDelta = y - lastY.current
+
+      if (y <= 20) {
+        setIsVisible(true)
+        setIsScrolled(false)
+      } else if (scrollDelta > 4) {
+        setIsVisible(false)
+        setIsScrolled(true)
+      } else if (scrollDelta < -4) {
+        setIsVisible(true)
+        setIsScrolled(true)
+      }
+
+      lastY.current = y
     }
-    window.addEventListener("scroll", handleScroll)
+
+    window.addEventListener("scroll", handleScroll, { passive: true })
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
 
@@ -47,185 +42,165 @@ export function Navbar() {
   const isHomePage = pathname === "/"
 
   return (
-    <>
-      {/* Announcement Bar */}
-      <div className="bg-primary text-primary-foreground text-center py-2 text-xs tracking-widest uppercase">
-        Free shipping on orders over $50
-      </div>
-
-      {/* Main Navbar */}
-      <nav 
-        className={`sticky top-0 z-50 transition-all duration-300 ${
-          isScrolled 
-            ? "bg-background/95 backdrop-blur-md shadow-sm" 
-            : "bg-background"
-        }`}
-      >
+    <header className={`sticky top-0 z-50 transition-transform duration-300 ${isVisible ? 'translate-y-0' : '-translate-y-full'}`}>
+      {/* Top Bar */}
+      {/* <div className="bg-foreground text-background py-2 text-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16 lg:h-20">
-            {/* Left - Menu & Search */}
-            <div className="flex items-center gap-6">
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 -ml-2 hover:opacity-60 transition-opacity"
-                aria-label="Toggle menu"
-              >
-                {isMenuOpen ? <X size={20} /> : <Menu size={20} />}
-              </button>
-              <Link 
-                href="/search" 
-                className="hidden sm:flex items-center gap-2 text-sm hover:opacity-60 transition-opacity"
-              >
-                <Search size={18} />
-                <span className="hidden lg:inline">Search</span>
-              </Link>
+          <div className="flex justify-center items-center space-x-6">
+            <div className="flex items-center space-x-2">
+              <Phone className="w-4 h-4" />
+              <span>+234 81653994444567</span>
             </div>
+            <div className="flex items-center space-x-2">
+              <Mail className="w-4 h-4" />
+              <span>Purelinedesignss@gmail.com</span>
+            </div>
+          </div>
+        </div>
+      </div> */}
 
-            {/* Center - Logo */}
-            <Link 
-              href="/" 
-              className="absolute left-1/2 -translate-x-1/2 text-2xl lg:text-3xl font-serif tracking-wider hover:opacity-60 transition-opacity"
-            >
-              LuxuryByEsta
+      {/* Main Navigation */}
+      <nav className={`transition-colors duration-300 ${isScrolled || !isHomePage ? 'bg-background/95 backdrop-blur-md shadow-sm' : 'bg-transparent'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            {/* Logo */}
+            <Link href="/" className="flex items-center space-x-2">
+              <div className="font-serif text-2xl font-bold">
+                Pureline Designs
+              </div>
             </Link>
-
-            {/* Right - Account & Cart */}
-            <div className="flex items-center gap-4 lg:gap-6">
-              <Link 
-                href="/search" 
-                className="sm:hidden p-2 hover:opacity-60 transition-opacity"
-                aria-label="Search"
-              >
-                <Search size={20} />
-              </Link>
-              <Link 
-                href={user ? "/account" : "/auth/login"} 
-                className="p-2 hover:opacity-60 transition-opacity"
-                aria-label="Account"
-              >
-                <User size={20} />
-              </Link>
-              <Link 
-                href="/cart" 
-                className="relative p-2 hover:opacity-60 transition-opacity"
-                aria-label="Cart"
-              >
-                <ShoppingBag size={20} />
-                {cartCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-medium rounded-full w-5 h-5 flex items-center justify-center">
-                    {cartCount}
-                  </span>
-                )}
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Desktop Navigation Links */}
-        <div className="hidden lg:block border-t border-border">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-center gap-12 py-4">
-              <Link 
-                href="/categories" 
-                className="text-sm tracking-wider uppercase hover:opacity-60 transition-opacity"
-              >
-                Shop All
-              </Link>
-              <Link 
-                href="/new-arrivals" 
-                className="text-sm tracking-wider uppercase hover:opacity-60 transition-opacity"
-              >
-                New Arrivals
-              </Link>
-              <Link 
-                href="/categories?category=bestsellers" 
-                className="text-sm tracking-wider uppercase hover:opacity-60 transition-opacity"
-              >
-                Best Sellers
-              </Link>
-              <Link 
-                href="/collections" 
-                className="text-sm tracking-wider uppercase hover:opacity-60 transition-opacity"
-              >
-                Collections
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Mobile Menu Overlay */}
-      {isMenuOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-background animate-fade-in"
-          style={{ top: "calc(2rem + 4rem)" }}
-        >
-          <div className="max-w-7xl mx-auto px-6 py-8">
-            <nav className="flex flex-col gap-6">
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center space-x-8">
               <Link 
                 href="/"
-                className="text-2xl font-serif tracking-wider hover:opacity-60 transition-opacity animate-fade-up"
+                className={`text-sm tracking-wider uppercase transition-colors hover:opacity-70 ${
+                  pathname === "/" ? "border-b-2 border-foreground pb-1" : ""
+                }`}
               >
                 Home
               </Link>
               <Link 
-                href="/categories"
-                className="text-2xl font-serif tracking-wider hover:opacity-60 transition-opacity animate-fade-up stagger-1"
+                href="/about"
+                className={`text-sm tracking-wider uppercase transition-colors hover:opacity-70 ${
+                  pathname === "/about" ? "border-b-2 border-foreground pb-1" : ""
+                }`}
               >
-                Shop All
+                About
               </Link>
               <Link 
-                href="/new-arrivals"
-                className="text-2xl font-serif tracking-wider hover:opacity-60 transition-opacity animate-fade-up stagger-2"
+                href="/services"
+                className={`text-sm tracking-wider uppercase transition-colors hover:opacity-70 ${
+                  pathname === "/services" ? "border-b-2 border-foreground pb-1" : ""
+                }`}
               >
-                New Arrivals
+                Services
               </Link>
               <Link 
-                href="/categories?category=bestsellers"
-                className="text-2xl font-serif tracking-wider hover:opacity-60 transition-opacity animate-fade-up stagger-3"
+                href="/portfolio"
+                className={`text-sm tracking-wider uppercase transition-colors hover:opacity-70 ${
+                  pathname === "/portfolio" ? "border-b-2 border-foreground pb-1" : ""
+                }`}
               >
-                Best Sellers
+                Portfolio
               </Link>
               <Link 
-                href="/collections"
-                className="text-2xl font-serif tracking-wider hover:opacity-60 transition-opacity animate-fade-up stagger-4"
+                href="/contact"
+                className={`text-sm tracking-wider uppercase transition-colors hover:opacity-70 ${
+                  pathname === "/contact" ? "border-b-2 border-foreground pb-1" : ""
+                }`}
               >
-                Collections
+                Contact
+              </Link>
+            </div>
+
+            {/* Contact Button & Mobile Menu Toggle */}
+            <div className="flex items-center space-x-4">
+              <Link 
+                href="/contact"
+                className="hidden sm:inline-block px-6 py-2 bg-foreground text-background text-sm tracking-wider uppercase hover:opacity-90 transition-opacity"
+              >
+                Get Quote
               </Link>
               
-              <div className="border-t border-border pt-6 mt-4">
-                {user ? (
-                  <>
-                    <Link 
-                      href="/account"
-                      className="block text-lg mb-4 hover:opacity-60 transition-opacity"
-                    >
-                      My Account
-                    </Link>
-                    <button 
-                      onClick={async () => {
-                        await supabase.auth.signOut()
-                        setUser(null)
-                        router.push("/")
-                      }}
-                      className="text-lg text-muted-foreground hover:opacity-60 transition-opacity"
-                    >
-                      Sign Out
-                    </button>
-                  </>
+              {/* Mobile Menu Toggle */}
+              <button
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                className="lg:hidden p-2"
+                aria-label="Toggle menu"
+              >
+                {isMenuOpen ? (
+                  <X className="w-6 h-6" />
                 ) : (
-                  <Link 
-                    href="/auth/login"
-                    className="text-lg hover:opacity-60 transition-opacity"
-                  >
-                    Sign In / Create Account
-                  </Link>
+                  <Menu className="w-6 h-6" />
                 )}
-              </div>
-            </nav>
+              </button>
+            </div>
           </div>
         </div>
-      )}
-    </>
+        {/* Mobile Navigation */}
+        {isMenuOpen && (
+          <div className="lg:hidden bg-background border-t border-border">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="py-4 space-y-4">
+                <Link 
+                  href="/"
+                  className={`block text-sm tracking-wider uppercase py-2 transition-colors hover:opacity-70 ${
+                    pathname === "/" ? "text-foreground font-semibold" : "text-muted-foreground"
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Home
+                </Link>
+                <Link 
+                  href="/about"
+                  className={`block text-sm tracking-wider uppercase py-2 transition-colors hover:opacity-70 ${
+                    pathname === "/about" ? "text-foreground font-semibold" : "text-muted-foreground"
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  About
+                </Link>
+                <Link 
+                  href="/services"
+                  className={`block text-sm tracking-wider uppercase py-2 transition-colors hover:opacity-70 ${
+                    pathname === "/services" ? "text-foreground font-semibold" : "text-muted-foreground"
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Services
+                </Link>
+                <Link 
+                  href="/portfolio"
+                  className={`block text-sm tracking-wider uppercase py-2 transition-colors hover:opacity-70 ${
+                    pathname === "/portfolio" ? "text-foreground font-semibold" : "text-muted-foreground"
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Portfolio
+                </Link>
+                <Link 
+                  href="/contact"
+                  className={`block text-sm tracking-wider uppercase py-2 transition-colors hover:opacity-70 ${
+                    pathname === "/contact" ? "text-foreground font-semibold" : "text-muted-foreground"
+                  }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Contact
+                </Link>
+                <div className="pt-4 border-t border-border">
+                  <Link 
+                    href="/contact"
+                    className="block w-full text-center px-6 py-3 bg-foreground text-background text-sm tracking-wider uppercase hover:opacity-90 transition-opacity"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Get Quote
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </nav>
+    </header>
   )
 }

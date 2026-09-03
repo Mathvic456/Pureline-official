@@ -1,8 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { Navbar } from "@/components/navbar"
-import { Footer } from "@/components/footer"
 import { MobileNav } from "@/components/mobile-nav"
 import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -125,7 +123,6 @@ export default function FAQPage() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <Navbar />
 
       {/* Hero Section */}
       <div className="border-b border-border">
@@ -186,7 +183,6 @@ export default function FAQPage() {
         </div>
       </div>
 
-      <Footer />
       <MobileNav />
       <div className="h-16 lg:hidden" />
     </main>

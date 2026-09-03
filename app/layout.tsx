@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next"
 import { Inter, Playfair_Display } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { ThemeProvider } from "@/components/theme-provider"
+import ClientShell from "@/components/ClientShell"
 import "./globals.css"
 
 const inter = Inter({ 
@@ -18,13 +19,13 @@ const playfair = Playfair_Display({
 })
 
 export const metadata: Metadata = {
-  title: "LuxuryByEsta | Premium Quality Products",
-  description: "Discover premium quality products at LuxuryByEsta. Shop our curated collection of exceptional items.",
-  keywords: ["ecommerce", "premium", "quality", "shopping", "luxury"],
-  authors: [{ name: "LuxuryByEsta" }],
+  title: "Pureline Designs | Premium Interior Design Services | Renovation | Space Planning",
+  description: "Transform your space with Pureline Designs. We create sophisticated, timeless interiors that reflect your personal style and elevate your lifestyle.",
+  keywords: ["interior design", "luxury interiors", "home design", "commercial design", "interior decorator", "residential design"],
+  authors: [{ name: "Pureline Designs" }],
   openGraph: {
-    title: "LuxuryByEsta | Premium Quality Products",
-    description: "Discover premium quality products at LuxuryByEsta",
+    title: "Pureline Designs | Premium Interior Design Services",
+    description: "Transform your space with premium interior design services",
     type: "website",
   },
     generator: 'v0.app'
@@ -49,7 +50,9 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning className={`${inter.variable} ${playfair.variable}`}>
       <body className="font-sans antialiased min-h-screen flex flex-col">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
-          {children}
+          <ClientShell>
+            {children}
+          </ClientShell>
         </ThemeProvider>
         <Analytics />
       </body>

@@ -3,14 +3,14 @@
 import React from "react"
 
 import { useState } from "react"
-import { Navbar } from "@/components/navbar"
 import { Footer } from "@/components/footer"
-import { MobileNav } from "@/components/mobile-nav"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from "lucide-react"
+import Image from "next/image"
 
 export default function ContactPage() {
   const [formState, setFormState] = useState({
@@ -43,29 +43,40 @@ export default function ContactPage() {
 
   return (
     <main className="min-h-screen bg-background text-foreground">
-      <Navbar />
+      <ThemeToggle />
 
       {/* Hero Section */}
-      <div className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-          <h1 className="text-4xl lg:text-5xl font-serif text-center mb-4">
-            Contact Us
+      <section className="relative min-h-[40vh] flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0">
+          <Image
+            src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=1920&q=80"
+            alt="Contact us"
+            fill
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-black/50" />
+        </div>
+        
+        <div className="relative z-10 max-w-4xl mx-auto px-4 text-center space-y-6">
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-serif text-white leading-tight animate-fade-up">
+            Get In Touch
           </h1>
-          <p className="text-muted-foreground text-center max-w-xl mx-auto">
-            We would love to hear from you. Send us a message and we will respond as soon as possible.
+          <p className="text-lg md:text-xl text-white/80 max-w-2xl mx-auto animate-fade-up stagger-1">
+            Let's discuss your interior design project
           </p>
         </div>
-      </div>
+      </section>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
         <div className="grid lg:grid-cols-3 gap-12">
           {/* Contact Information */}
           <div className="lg:col-span-1 space-y-8">
             <div>
-              <h2 className="text-xl font-serif mb-6">Get in Touch</h2>
+              <h2 className="text-xl font-serif mb-6">Let's Create Something Beautiful</h2>
               <p className="text-muted-foreground text-sm leading-relaxed">
-                Have a question about your order, our products, or just want to say hello? 
-                We are here to help and would love to hear from you.
+                Whether you're planning a complete home renovation or looking for design consultation, 
+                we're here to help bring your vision to life.
               </p>
             </div>
 
@@ -76,7 +87,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-medium mb-1">Email</h3>
-                  <p className="text-muted-foreground text-sm">support@luxurybyesta.com</p>
+                  <p className="text-muted-foreground text-sm">Purelinedesignss@gmail.com</p>
                 </div>
               </div>
 
@@ -86,7 +97,7 @@ export default function ContactPage() {
                 </div>
                 <div>
                   <h3 className="font-medium mb-1">Phone</h3>
-                  <p className="text-muted-foreground text-sm">+1 (555) 123-4567</p>
+                  <p className="text-muted-foreground text-sm">(+234) 81653994444</p>
                 </div>
               </div>
 
@@ -97,9 +108,9 @@ export default function ContactPage() {
                 <div>
                   <h3 className="font-medium mb-1">Address</h3>
                   <p className="text-muted-foreground text-sm">
-                    123 Luxury Lane<br />
-                    New York, NY 10001<br />
-                    United States
+                    Port Harcourt<br />
+                    Rivers State<br />
+                    Nigeria
                   </p>
                 </div>
               </div>
@@ -109,11 +120,11 @@ export default function ContactPage() {
                   <Clock size={18} />
                 </div>
                 <div>
-                  <h3 className="font-medium mb-1">Business Hours</h3>
+                  <h3 className="font-medium mb-1">Office Hours</h3>
                   <p className="text-muted-foreground text-sm">
-                    Monday - Friday: 9am - 6pm EST<br />
-                    Saturday: 10am - 4pm EST<br />
-                    Sunday: Closed
+                    Monday - Friday: 9am - 6pm<br />
+                    Saturday: 10am - 4pm<br />
+                    Sunday: By Appointment
                   </p>
                 </div>
               </div>
@@ -128,9 +139,9 @@ export default function ContactPage() {
                   <div className="w-16 h-16 mx-auto mb-6 flex items-center justify-center bg-primary text-primary-foreground rounded-full">
                     <CheckCircle size={32} />
                   </div>
-                  <h3 className="text-2xl font-serif mb-2">Message Sent</h3>
+                  <h3 className="text-2xl font-serif mb-2">Thank You!</h3>
                   <p className="text-muted-foreground mb-6">
-                    Thank you for contacting us. We will get back to you within 24-48 hours.
+                    We've received your message and will get back to you within 24-48 hours.
                   </p>
                   <Button onClick={() => setIsSubmitted(false)} variant="outline">
                     Send Another Message
@@ -210,9 +221,7 @@ export default function ContactPage() {
         </div>
       </div>
 
-      <Footer />
-      <MobileNav />
-      <div className="h-16 lg:hidden" />
+      
     </main>
   )
 }
